@@ -8,24 +8,26 @@ function liveReady(){return state.settings.ai==='cloud'&&workerAddressValid(stat
 function liveSet(phase,status,error){live.phase=phase;live.status=status;if(typeof error==='string')live.error=error;liveUpdate();}
 function liveUpdate(){
  if(page!=='speaking'||speakMode!=='live')return;
- let el=document.getElementById('live-status');if(el)el.textContent=live.status;
- let dot=document.getElementById('live-orb');if(dot){dot.className='live-orb '+(live.phase==='listening'?'listening':live.phase==='speaking'?'speaking':live.phase==='thinking'?'thinking':'');dot.textContent=live.phase==='listening'?'🎙':live.phase==='speaking'?'🔊':live.phase==='thinking'?'…':'✦';}
- let err=document.getElementById('live-error');if(err){err.textContent=live.error;err.hidden=!live.error;}
- let start=document.getElementById('live-start');if(start){start.textContent=live.active?'■ Görüşmeyi bitir':'▶ Canlı görüşmeyi başlat';start.dataset.action=live.active?'live-stop':'live-start';}
- let done=document.getElementById('live-done');if(done)done.disabled=!live.active||live.phase!=='listening';
- let box=document.getElementById('live-transcript');if(box){box.innerHTML=liveConversation().slice(-16).map(m=>`<div class="bubble ${m.role==='user'?'user':'assistant'}"><span class="live-label">${m.role==='user'?'SEN':'AI ÖĞRETMEN'}</span>${h(m.content)}</div>`).join('')||'<p class="muted">Görüşmeyi başlat. Öğretmen önce konuşacak ve sonra seni dinleyecek.</p>';box.scrollTop=box.scrollHeight;}
+ const el=document.getElementById('live-status');if(el)el.textContent=live.status;
+ const orb=document.getElementById('live-orb');if(orb){orb.className='mic-control '+(live.phase==='listening'?'listening':live.phase==='speaking'?'speaking':live.phase==='thinking'?'thinking':'');orb.textContent=live.active?'■':'🎙';orb.setAttribute('aria-label',live.active?'Görüşmeyi bitir':'Görüşmeyi başlat');}
+ const err=document.getElementById('live-error');if(err){err.textContent=live.error;err.hidden=!live.error;}
+ const start=document.getElementById('live-start');if(start){start.textContent=live.active?'■ Görüşmeyi bitir':'▶ Canlı görüşmeyi başlat';start.dataset.action=live.active?'live-stop':'live-start';}
+ const mic=document.getElementById('live-orb');if(mic)mic.dataset.action=live.active?'live-stop':'live-start';
+ const done=document.getElementById('live-done');if(done)done.disabled=!live.active||live.phase!=='listening';
+ const last=document.getElementById('live-last-response');if(last)last.textContent=live.lastAnswer||'Hello! Let’s practice English together.';
+ const box=document.getElementById('live-transcript');if(box){box.innerHTML=liveConversation().slice(-16).map(m=>`<div class="bubble ${m.role==='user'?'user':'assistant'}"><span class="live-label">${m.role==='user'?'SEN':'AI ÖĞRETMEN'}</span>${h(m.content)}</div>`).join('')||'<p class="muted">Görüşmeyi başlat. Öğretmen konuşacak, ardından seni dinleyecek.</p>';box.scrollTop=box.scrollHeight;}
 }
 function renderLiveVoice(){
- let ready=liveReady();root.innerHTML=`<div class="eyebrow">Live English Coach</div><h1>Canlı AI görüşmesi</h1>
- <div class="voice-tabs"><button class="mini-tab on" data-action="voice-live">◉ Canlı AI görüşmesi</button><button class="mini-tab" data-action="voice-phrase">♫ Cümle tekrarı</button></div>
- <div class="live-stage"><span class="badge">${h(currentLesson().level)} · AI Öğretmen ile sesli sohbet</span><div class="live-orb" id="live-orb">✦</div><h2 id="live-status" role="status">${h(live.status)}</h2><p class="muted">Sen konuş → AI dinler → sesli cevap verir. Anlamadığında Türkçe açıklama isteyebilirsin.</p><button class="btn full" id="live-start" data-action="${live.active?'live-stop':'live-start'}">${live.active?'■ Görüşmeyi bitir':'▶ Canlı görüşmeyi başlat'}</button></div>
- ${ready?'':`<div class="warning">Canlı AI için Ayarlar bölümünde Cloudflare gerçek AI modu, Worker adresi ve kişisel erişim kodu kayıtlı olmalı. <button class="btn secondary" data-page="settings">Ayarları aç</button></div>`}
+ const ready=liveReady();
+ root.innerHTML=`<div class="live-page-head"><button class="live-back" data-page="home" aria-label="Ana sayfaya dön">‹</button><div><h1>Canlı AI görüşmesi</h1><p>English AI Teacher ile konuşuyorsun</p></div><span class="live-online ${ready?'':'offline'}">${ready?'AI çevrimiçi':'AI çevrimdışı'}</span></div>
+ <div class="live-stage premium-live"><div class="live-avatar-ring"><img src="teacher-avatar.webp" alt="AI öğretmen avatarı" width="448" height="568"></div><div class="live-avatar-speech" id="live-last-response">${h(live.lastAnswer||'Hello! Let’s practice English together.')}</div><div class="live-listen-banner"><h2 id="live-status" role="status">${h(live.status)}</h2><p>${live.phase==='listening'?'Konuşmaya başlayabilirsin…':'Mikrofon ile karşılıklı pratik yap'}</p></div><button class="mic-control" id="live-orb" data-action="${live.active?'live-stop':'live-start'}" aria-label="Görüşmeyi başlat">🎙</button><p class="live-mic-help">${live.active?'Dokunarak görüşmeyi bitirebilirsin':'Konuşmayı başlatmak için mikrofona dokun'}</p><button class="btn secondary full" id="live-start" data-action="${live.active?'live-stop':'live-start'}">${live.active?'■ Görüşmeyi bitir':'▶ Canlı görüşmeyi başlat'}</button></div>
+ ${ready?'':`<div class="warning">Canlı AI bağlantısı henüz kurulmadı. Ayarlar bölümünden Cloudflare AI erişimini etkinleştir. <button class="btn secondary" data-page="settings">Ayarları aç</button></div>`}
  <div class="live-message" id="live-error" ${live.error?'':'hidden'} role="alert">${h(live.error)}</div>
- <div class="live-controls"><button class="btn secondary" id="live-done" data-action="live-done" ${live.active&&live.phase==='listening'?'':'disabled'}>✓ Sözümü bitirdim</button><button class="btn secondary" data-action="live-explain" ${ready?'':'disabled'}>🇹🇷 Türkçe açıkla</button><button class="btn secondary" data-action="live-repeat">↻ Tekrar söyle</button><button class="btn secondary" data-action="live-slower">${live.slow?'✓ Yavaş konuşma':'◷ Daha yavaş'}</button></div>
- <div class="row between"><h2 class="section-title" style="margin:10px 0">Görüşme geçmişi</h2><button class="mini-tab" data-action="live-reset">Temizle</button></div><div class="live-talk" id="live-transcript" aria-label="Konuşmanın yazıya dönüştürülmüş hali"></div>
- <div class="live-composer"><input class="field" id="live-input" maxlength="900" placeholder="Mikrofon çalışmazsa yaz / klavye diktesi" aria-label="Öğretmene yazılı mesaj"/><button class="btn" data-action="live-send">Gönder</button></div>
- <button class="btn secondary full" style="margin-top:10px" data-action="live-memo" ${live.lastAnswer?'':'disabled'}>☆ Son öğretmen cümlesini ezberle</button>
- <p class="live-help">Bu sürüm tam eşzamanlı telefon çağrısı değil, otomatik sessizlik algılamalı iki yönlü sesli görüşmedir. iOS izinleri ve arka plan kısıtlarına tabidir. Ses kayıtları metne çevrilmek üzere Cloudflare'a gönderilir ve kaydedilmez. AI'nin değerlendirmesi metne dayanır; fonetik telaffuz puanı değildir.</p>`;
+ <div class="premium-live-controls"><button id="live-done" data-action="live-done" ${live.active&&live.phase==='listening'?'':'disabled'}><span>■</span>Sözümü bitirdim</button><button data-action="live-explain" ${ready?'':'disabled'}><span>♧</span>Türkçe açıkla</button><button data-action="live-repeat"><span>↻</span>Tekrar söyle</button><button data-action="live-slower"><span>◷</span>${live.slow?'Normal hız':'Daha yavaş'}</button></div>
+ <div class="live-conversation-card"><div class="row between"><h2 class="section-title" style="margin:4px 0">☷ Konuşma Akışı</h2><button class="mini-tab" data-action="live-reset">Temizle</button></div><div class="live-talk" id="live-transcript" aria-label="Konuşma geçmişi"></div><div class="live-composer"><input class="field" id="live-input" maxlength="900" placeholder="Yaz veya klavyeden dikte et" aria-label="Öğretmene mesaj yaz"/><button class="btn" data-action="live-send">➤</button></div></div>
+ <button class="btn secondary full" data-action="live-memo" ${live.lastAnswer?'':'disabled'}>☆ Son cümleyi ezberime kaydet</button>
+ <div class="voice-tabs"><button class="mini-tab on" data-action="voice-live">◉ Canlı AI</button><button class="mini-tab" data-action="voice-phrase">♫ Cümle tekrarı</button></div>
+ <p class="live-help">Bu bir tam-dupleks telefon görüşmesi değildir. AI sırayla dinler ve konuşur. Mikrofon kayıtları yalnızca metne çevrilmek üzere Cloudflare'a gönderilir. Telaffuz puanı verilmez. iPhone Safari mikrofon izinleri test edilmelidir.</p>`;
  liveUpdate();
 }
 function liveMicError(e){let code=String(e?.name||e?.message||e||'');if(/NotAllowed|Permission|denied/i.test(code))return 'Mikrofon izni reddedildi. Safari → Web Sitesi Ayarları → Mikrofon bölümünü kontrol et. Olmazsa alttaki iPhone klavye diktesini kullan.';
@@ -116,7 +118,7 @@ function liveLog(role,content){if(!Array.isArray(state.voiceHistory))state.voice
 async function liveTalkToAI(message){
  if(!liveReady())throw Error('Worker adresi ve erişim kodunu kontrol et.');
  if(live.busy)return;
- live.busy=true;liveLog('user',message);live.error='';liveSet('thinking','AI öğretmen düşünüyor…');const seq=live.seq;
+ live.busy=true;liveLog('user',message);dailyPlan().steps.speaking=true;save();live.error='';liveSet('thinking','AI öğretmen düşünüyor…');const seq=live.seq;
  const lesson=currentLesson();
  try{
   const res=await liveWorker({messages:liveConversation().slice(-9).map(m=>({role:m.role,content:m.content})),context:{mode:'voice',level:lesson.level,title:lesson.title,rule:lesson.rule,mistakes:Object.values(state.misses).sort((a,b)=>b.errors-a.errors).slice(0,3).map(m=>m.title+' → '+m.answer)}},60000);
