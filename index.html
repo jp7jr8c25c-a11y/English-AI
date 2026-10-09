@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="tr">
+<head>
+ <meta charset="utf-8">
+ <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+ <meta name="theme-color" content="#0a0b14">
+ <meta name="apple-mobile-web-app-capable" content="yes">
+ <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+ <meta name="apple-mobile-web-app-title" content="English AI">
+ <meta name="description" content="iPhone için kişisel İngilizce öğretmeni ve sesli pratik uygulaması.">
+ <link rel="manifest" href="manifest.webmanifest">
+ <link rel="icon" href="icon.svg" type="image/svg+xml">
+ <link rel="apple-touch-icon" href="icon-192.png">
+ <link rel="stylesheet" href="style.css">
+ <title>English AI Teacher</title>
+</head>
+<body>
+ <div class="shell">
+ <header class="topbar"><div class="brand-mark">E<span>✦</span></div><div class="brand-title"><strong>ENGLISH AI</strong><small>PERSONAL TEACHER</small></div><button class="icon-btn" type="button" data-page="settings" aria-label="Ayarlar">⚙</button></header>
+ <main id="view" aria-live="polite"></main>
+ <nav class="bottom-nav" aria-label="Ana menü">
+  <button data-page="home" class="navitem active"><span>⌂</span><small>Ana sayfa</small></button>
+  <button data-page="courses" class="navitem"><span>▤</span><small>Dersler</small></button>
+  <button data-page="speaking" class="navitem"><span>♫</span><small>Konuşma</small></button>
+  <button data-page="chat" class="navitem"><span>✦</span><small>AI Öğretmen</small></button>
+  <button data-page="stats" class="navitem"><span>◫</span><small>Gelişim</small></button>
+ </nav>
+ </div>
+ <div id="toast" role="status"></div>
+ <script src="data.js" defer></script><script src="app.js" defer></script>
+</body>
+</html>
