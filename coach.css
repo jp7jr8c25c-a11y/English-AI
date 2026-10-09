@@ -1,0 +1,21 @@
+/* English AI Teacher v2.7 - Coach component; inherits v2.6 premium design */
+.coach-panel{margin:20px 0;padding:17px;overflow:hidden}
+.coach-heading{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+.coach-heading h2{font-size:20px!important;line-height:1.2;margin:3px 0!important}
+.coach-avatar{display:block;width:54px;height:54px;min-width:54px;overflow:hidden;border-radius:50%;border:2px solid #746dff;box-shadow:0 0 20px #495aff77;background:#0f1f49}
+.coach-avatar img{width:100%;height:100%;object-fit:cover;object-position:center 25%}
+.coach-mastery{display:flex;justify-content:space-between;align-items:center;gap:10px;color:#d1d9ff;font-size:13px;margin:15px 0 7px}
+.coach-pips{display:flex;gap:7px;margin-bottom:12px}
+.coach-pips i{display:block;flex:1;height:7px;border-radius:7px;background:#293c77;border:1px solid #4d5c9a}
+.coach-pips i.on{background:linear-gradient(90deg,#18c7ff,#a44aff);box-shadow:0 0 12px #6d65ff88}
+.coach-teacher-message{padding:15px;border-radius:17px;border:1px solid #475aaf;background:linear-gradient(140deg,#101d44,#172859);margin:12px 0}
+.coach-teacher-message strong{color:#a8bfff}
+.coach-teacher-message p{white-space:pre-line;line-height:1.65;overflow-wrap:anywhere;margin:9px 0 0}
+.coach-correction{color:#9ee4f7}
+.coach-question{padding:16px;border-radius:17px;background:#08162fbf;border:1px solid #364a8b}
+.coach-question h3{font-size:19px!important;line-height:1.45;margin:12px 0 16px;overflow-wrap:anywhere}
+.coach-question textarea{width:100%;min-height:100px;resize:vertical;margin:7px 0 13px}
+.coach-success{background:#073b4059;border:1px solid #23beb4;color:#bbfff2;padding:13px;margin:12px 0;border-radius:14px;line-height:1.5}
+.coach-restart{margin-top:10px}
+.coach-panel .btn.full{width:100%;min-height:49px}
+@media (max-width:380px){.coach-panel{padding:13px}.coach-heading h2{font-size:18px!important}.coach-question{padding:12px}}
