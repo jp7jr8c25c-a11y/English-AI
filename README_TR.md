@@ -1,54 +1,66 @@
-# English AI Teacher v2.0 — iPhone
+# English AI Teacher v2.1 — iPhone Güncellemesi
 
-**Geliştirici:** Ali Erkonak
+**Geliştirici: Ali Erkonak**  
+Mevcut koyu tema ve 24 ders/96 soru/ezber defteri korunur. Bu sürüm v2.0'ın küçük ve hedefli güncellemesidir.
 
-Bu bir iPhone Safari/PWA uygulamasıdır. Native `.ipa` değildir. Mac veya Xcode olmadan GitHub Pages üzerinden kullanılabilir. Mevcut v1 dosyalarının üstüne aynı GitHub deposuna yüklenirse **aynı origin / aynı tarayıcı profili** koşuluyla v1 ders kayıtlarını korur: depolama anahtarı `english_ai_teacher_iphone_v1` bilerek değiştirilmedi.
+## Değişiklikler
 
-## v2.0 içinde yapılanlar
+1. **Gerçek AI modeli güncellendi.** Cloudflare tarafındaki eski `@cf/meta/llama-3.1-8b-instruct-fast` adı artık mevcut model kataloğunda yok. Bu pakette ücretsiz planda kullanılabilen `@cf/zai-org/glm-4.7-flash` kullanılır (Workers AI ücretsiz kota geçerlidir).
+2. **Ayarlar > Gerçek AI bağlantısını test et** eklendi. Test, sunucuda AI üretimi başlatmadan güvenli Worker bağlantısı, AI binding ve erişim kodu varlığını kontrol eder. Başarı mesajı tek başına model yanıtının doğru olduğunu garanti etmez: testten sonra sohbet mesajı gönder.
+3. **iPhone mikrofon erişiminde** `not-allowed` vb. hatalar anlaşılır biçimde gösterilir, tekrar tekrar başarısız dinleme başlatılmaz. iPhone klavyesi/dikte alanına tek dokunuşlu geçiş eklendi.
+4. Cloudflare AI bağlantısı kurulursa konuşma sekmesindeki mikrofon **en fazla 12 saniyelik ses kaydını** izinle alıp Cloudflare'ın `@cf/openai/whisper-large-v3-turbo` modeline göndermeye çalışır. Bu özellik iPhone Safari, mikrofon izni ve bulut ses modelinin biçim desteğine bağlıdır; iPhone üzerinde canlı test gerektirir. **Gerçek fonetik telaffuz puanı değildir.** Kaydedilen ses uygulamada veya sunucuda kalıcı dosya olarak tutulmaz.
+5. Worker adresi eksikken sohbete yazdığın mesaj kaybolmaz; hata mesajları sohbet geçmişine yeni öğretmen yanıtları olarak eklenmez.
+6. Ayarlar kısmı, Cloudflare'a yazılacak `ALLOWED_ORIGIN` değerini otomatik gösterir ve kopyalamana izin verir.
+7. Yerel veri anahtarı hâlâ **`english_ai_teacher_iphone_v1`**. İlerleme, ezber ve JSON yedekleme mantığı değiştirilmedi. PWA servis çalışanının önbellek sürümü **2.1** yapıldı.
 
-- Önceki 24 ders ve 96 mini sınav sorusu korundu. Her konu için adım adım genişletilmiş Türkçe konu anlatımı, yaygın hata ve dinlenebilir örnekler eklendi (`guides.js`). Bu paket hâlâ tam CEFR A0–C1 kütüphanesi değildir.
-- Ana sayfada günlük **20 + 15 + 15 + 10 dakika** hedefli çalışma planı: konu anlatımı, örnek/ezber, sesli pratik, sınav/tekrar. Bölümler manuel işaretlenir; gerçek geçen süreyi ölçmez, zorunlu zamanlayıcı değildir. Her takvim günü yeni plan oluşur; bir ders başarıyla tamamlanmadıysa tekrar önerilir.
-- Yeni **☆ Ezber** sayfası: kendi kelime/cümle/notlarını gir, düzenle, sil, dinle; derslerdeki örnekleri veya AI sohbetinden seçtiğin metni kaydet. Çift kayıt uyarısı vardır.
-- Kart tekrarları: Kartın İngilizcesini gör, anlamını aç, **Tekrar (10 dk)** / **Zor (1 gün)** / **Bildim (1, 3, 7, 14, 30... gün)** seç. Tekrarlar cihaz saatine bağlıdır; otomatik sistem bildirimi gelmez.
-- Eski sohbetler, ders sonuçları ve yeni ezber kartları **Ayarlar > Yedek indir** ile birlikte dışarı alınır. API erişim kodları yedeğe yazılmaz. v1 JSON yedeklerini yüklemeye devam eder.
-- Çevrimiçi gerçek AI için **ücretsiz kotada kullanılabilen Cloudflare Workers AI** Worker kodu `free-cloudflare-ai/worker.js` içinde yer alır; OpenAI API anahtarı gerekmez. Kurulum ayrı bir adımdır. Cloudflare ücretsiz kullanım sınırına göre AI sohbet durabilir; ders ve ezber defteri yerel çalışmaya devam eder.
+## Güncelleme: iPhone + GitHub Pages
 
-## iPhone üzerinden yeni sürümü yükle
+**İlk olarak v2.0 Ayarlar > Yedek indir yap.** Safari ve ana ekrana eklenmiş uygulamanın veri alanları iOS sürümüne göre farklı olabilir. Yedeğini kaybetme.
 
-**Önce mevcut v1 uygulamasında `Ayarlar > Yedek indir` yap.** Böylece yayınlama ve Safari önbellek sorunlarına karşı verin korunur.
+- Elindeki eski GitHub deponun ana dizininde **`app.js` ve `sw.js`** dosyalarını bu ZIP'tekilerle değiştir.
+- `free-cloudflare-ai/worker.js` **GitHub Pages'e yüklenmez**; Cloudflare Worker'ın **Edit Code** ekranında eski Worker kodunu bununla değiştirip **Deploy** yaparsın.
+- `index.html`, `style.css`, `data.js`, `guides.js` ve ikonlar değişmedi; eski dosyaların durması yeterli.
+- Mevcut GitHub Pages HTTPS adresini Safari'de yenile. Kaydedilmiş PWA ikonunu yeniden oluşturman normalde gerekmez. Önbellek yüzünden eski sürüm devam ederse Safari'den yayın adresini açıp yenile, ardından ana ekran uygulamasını yeniden aç. **Tarayıcı verilerini temizleme!**
+- **Ayarlar** sayfasının altında “English AI Teacher 2.1” yazdığını ve **Gerçek AI bağlantısını test et** düğmesini gördüğünü doğrula.
 
-1. ZIP'i iPhone'da Dosyalar ile aç.
-2. Mevcut GitHub deponun ana dizinine şu dosyaları **mevcut adlarıyla** yükle/güncelle: `index.html`, `app.js`, `data.js`, `guides.js`, `style.css`, `sw.js`, `manifest.webmanifest`, `icon.svg`, `icon-192.png`, `icon-512.png`.
-3. `free-cloudflare-ai` klasörü **GitHub Pages'e yüklenmek zorunda değil**, Worker tarafında kullanılır. Önceki sürümdeki ücretli OpenAI bağlantısı bu ücretsiz pakete dahil edilmedi.
-4. GitHub Pages mevcut yayın adresini Safari'de aç ve yenile. Ana ekran ikonunu açtığında **v2.0**, ana menüde **☆ Ezber** görmelisin.
-5. Önceki kayıtlar aynı Safari/site depolama bağlamındaysa otomatik korunur. Safari ve ana ekran uygulamasında depolar bazı iOS sürümlerinde ayrılabilir; boş görürsen **Ayarlar > Yedek yükle** ile v1 yedeğini içe aktar. Yeniden uygulama kurmak veya tarayıcı verisini temizlemek kayıtları silebilir.
-6. Test: Dersler > ilk açık ders > örnek satırında ☆ > ezber defterinde Türkçe anlamı doldur > Kaydet > Bugünkü ezberlerimi çalış > Cevabı göster > Bildim > yedek indir.
+## Ücretsiz Cloudflare AI'yı ilk kez kur (iPhone ile)
 
-GitHub Pages kurulmadıysa: GitHub üzerinde public repo oluştur, yukarıdaki kök dosyaları yükle, Settings > Pages > Deploy from branch `main` `/(root)` seç, yayımlanan HTTPS adresini Safari'de aç ve **Paylaş > Ana Ekrana Ekle** kullan. GitHub deposu kaynak kodlarını herkese açık yapar; cihazda tutulan ezber kayıtlarını açığa çıkarmaz.
+1. Safari: <https://dash.cloudflare.com/>. **Workers Free** hesabına giriş yap veya ücretsiz bir hesap oluştur. Ödeme planına yükseltme yapma.
+2. **Workers & Pages > Create application > Worker** oluştur. Cloudflare arayüzünde **Edit Code** bölümüne `free-cloudflare-ai/worker.js` dosyasının içeriğini yapıştır ve **Deploy** et. Cloudflare'ın başlangıç şablonu yerine bu kod geçmeli.
+3. Worker'ın **Settings > Bindings** kısmında **Workers AI** bağını ekle. **Variable name tam `AI`** olacak. Kaydet / Deploy.
+4. **Settings > Variables and Secrets** içinde:
+   - `ALLOWED_ORIGIN`: **Text**, değerini English AI Teacher uygulamasında **Ayarlar > ALLOWED_ORIGIN** kutusundan kopyala. Yalnızca `https://kullanici.github.io` benzeri origin; **/depo-adi yolu ve sondaki `/` bulunmasın**.
+   - `APP_ACCESS_TOKEN`: **Secret**, 24+ karakter uzunluğunda rastgele ve başka yerde kullanmadığın erişim kodu. Sadece Worker Secret ve kendi iPhone uygulama ayarına yaz. GitHub'a, sohbete veya ekran görüntüsüne gönderme.
+5. Cloudflare Worker'ın sunduğu `https://...workers.dev` adresini kopyala.
+6. English AI Teacher > **Ayarlar**: Öğretmen modu = **Ücretsiz Cloudflare gerçek AI**, Worker adresi = adım 5, kişisel erişim kodu = adım 4. **Gerçek AI bağlantısını test et** düğmesine bas. Başarılıysa **Ayarları kaydet**.
+7. **AI Öğretmen** sekmesinde `I am study English every day` yaz; AI bunu `I study English every day` şeklinde düzeltip Türkçe açıklayabilmeli. Sonra **Konuşma** sekmesinde mikrofon ve izinleri dene.
 
-## Ücretsiz gerçek AI'yı iPhone'da kur
+> Önemli: Cloudflare Worker kodunu GitHub'a koyman onu otomatik devreye almaz. Worker Cloudflare'a ayrıca dağıtılmalı, `AI` binding ile `ALLOWED_ORIGIN` ve `APP_ACCESS_TOKEN` ayarlanmalıdır. Bunlar tamamlanmadan “güvenli HTTPS Worker adresi geçersiz” benzeri bağlantı hatası devam eder.
 
-Ücretsiz bağlantı ayrı kurulmadıkça uygulamadaki **Çevrimdışı hazır koç** gerçek üretken AI değildir. Varsayılan kalır ve önceden tanımlı sınırlı cevap verir.
+## iPhone'da mikrofon engellenirse
 
-1. `https://dash.cloudflare.com` adresinde **Workers Free** hesap aç veya mevcut hesabınla giriş yap. Ücretli plan seçme.
-2. Workers & Pages > Create > **Worker** oluştur. Edit code bölümünde ZIP'teki `free-cloudflare-ai/worker.js` dosyasının **tamamını** yapıştır ve Deploy yap. Kodda hiçbir gizli anahtar yazılmayacak.
-3. Worker sayfasında **Settings > Bindings > Add binding > Workers AI** seç, değişken adını `AI` yap. Bu bağ **zorunludur**; yalnızca Worker kodunu yüklemek gerçek AI'ı çalıştırmaz.
-4. Worker **Settings > Variables and Secrets** bölümüne şunları ekle:
-   - `ALLOWED_ORIGIN` — **Text**: mevcut uygulama adresinin sadece origin bölümü, örn. `https://kullaniciadi.github.io` (depo yolu **olmayacak**, sonuna `/` eklenmeyecek).
-   - `APP_ACCESS_TOKEN` — **Secret**: **en az 24 karakter** uzunluğunda kendin oluşturduğun güçlü erişim kodu. Bunu public Github'a yazma. iPhone Ayarlar'da kullanmak üzere güvenli sakla.
-5. Uygulama > Ayarlar > Öğretmen modu = **Ücretsiz Cloudflare gerçek AI**; HTTPS Worker adresi = Cloudflare'ın verdiği `https://....workers.dev` adresi; erişim kodu = adım 4'teki `APP_ACCESS_TOKEN`. **Kaydet**.
-6. AI Öğretmen bölümünde “I am study English every day” mesajını dene. AI öğretmeni doğru biçimi ve nedenini açıklamalı. Hata varsa Worker ayarlarını kontrol et.
+- Safari'de web sayfasını aç. Adres çubuğundaki **sayfa ayarları** menüsünden **Mikrofon → İzin Ver** (menü isimleri iOS sürümüne göre değişebilir).
+- iPhone **Ayarlar > Genel > Klavye > Dikteyi Etkinleştir** açık olsun. Konuşma ekranında metin alanına dokun, klavyenin mikrofon simgesiyle söyle ve **Cümleyi karşılaştır** butonuna bas.
+- iOS ana ekran PWA'sında mikrofon / tarayıcı konuşma tanıma API desteği farklı olabilir. Cloudflare bağlantısı hazır olsa da mikrofon erişim izni reddedildiğinde kayıt yapılamaz. Bu durumda **klavye diktesi veya metin yazma** kullanılabilir.
+- Ses kaydı (Cloudflare modu) sunucuya gönderilir ve ücretsiz Workers AI kotasından tüketir. Günlük 10.000 Neuron ücretsiz kota sabit konuşma süresi anlamına gelmez; kullanım miktarına göre değişir.
 
-Cloudflare dokümanları: [Workers AI binding](https://developers.cloudflare.com/workers-ai/configuration/bindings/), [Ücretsiz AI kotası](https://developers.cloudflare.com/workers-ai/platform/pricing/), [Model](https://developers.cloudflare.com/workers-ai/models/llama-3.1-8b-instruct-fast/).
+## Güvenlik ve veri
 
-### Ücret / gizlilik / sınırlar
+- **OpenAI API, ChatGPT Plus erişimi veya kredi kartı gerekli değildir.** Workers Free planı kullanılacak. Ücretsiz kota bitince AI çağrıları hata verir; ders/ezber yerelde çalışmaya devam eder.
+- AI sohbet mesajları ve Cloudflare modunda mikrofonla üretilen kısa kayıtlar **Cloudflare sunucusuna aktarılır**. Sunucuda kayıtların kalıcı saklanması için kod eklenmemiştir. Üçüncü taraf hizmetin işlem politikaları ayrıca geçerlidir.
+- Ezber, ders kayıtları ve günlük planlar yerel tarayıcı belleğinde saklanır; yedek almak önerilir. Özel Worker erişim kodu yedek JSON'a yazılmaz.
+- Uygulama fonetik/telaffuz analizi yapmaz; transkript metnini hedef cümleyle karşılaştırır.
 
-- Workers AI Free günlük **10.000 Neuron** ücretsiz kota verir ve sınır aşılınca işlem başarısız olur; gerçek sohbet süresi verilen/üretilen tokenlere ve seçili modele bağlıdır. Kesin 60 veya 120 dakikayı garanti etmiyoruz. iPhone mikrofonu, speech recognition ve TTS ayrı konulardır; sesin değerlendirilmesi bu sürümde profesyonel telaffuz analizi değildir.
-- Cloudflare hesabında ücretli seçeneğe yükseltmediğin sürece önerilen Worker için ücretli API kullanılmaz. Kullanım ve ücretlendirme politikaları zamanla değişebilir; Cloudflare panelinden plan ve kotaları kontrol et.
-- AI sohbetine yazdığın metinler Cloudflare'a gönderilir. Yerel ders ilerlemesi / kartlar / günlük planlar gönderilmez; yalnızca sohbete yazdığın metin ve sınırlı ders bağlamı gönderilir. Cihazda saklanan `APP_ACCESS_TOKEN` JSON yedeğine dahil edilmez. Kodları herkese açık paylaşmak doğrudan şifreyi paylaşmaz ama kişisel Worker token'ını gizli tutmalısın.
-- AI modelleri hatalı açıklamalar verebilir; doğruluğu programdaki hazırlanmış ders ve testlerle birlikte değerlendir.
-- iPhone'un bildirim sistemi için ayrı izinli push altyapısı kurulmamıştır; ezber zamanı geldiğinde uygulamada görünür, otomatik bildirim yoktur.
+Resmi kaynaklar:
+- <https://developers.cloudflare.com/workers-ai/get-started/dashboard/>
+- <https://developers.cloudflare.com/workers-ai/platform/pricing/>
+- <https://developers.cloudflare.com/workers-ai/models/glm-4.7-flash/>
+- <https://developers.cloudflare.com/workers-ai/models/whisper-large-v3-turbo/>
+- <https://support.apple.com/guide/iphone/dictate-text-iph2c0651d2/ios>
 
-## Proje dosyaları
+## Test sonuçları
 
-`index.html` sayfa ve sekmeler, `style.css` koyu arayüz, `app.js` iş mantığı, `data.js` 24 ders / 96 soru, `guides.js` genişletilmiş anlatım, `sw.js` çevrimdışı önbellek, ikonlar/PWA manifesti, `free-cloudflare-ai/worker.js` **ücretsiz kota AI gateway**, Ücretli OpenAI bağlantısı bu paketle verilmez.
+- JS sözdizimi: geçti.
+- Cloudflare Worker kuralları: taklit/test ortamında origin kontrolü, token doğrulama, bağ testi, sohbet istekleri ve ses yazıya çevirme yolu geçti.
+- Mobil genişlikte tarayıcıda dosyaları sayfaya doğrudan ekleyerek temel arayüz ve kayıt/ezber işlemleri test edildi. Otomatik test ortamının yerel URL'lere erişimi engelli olduğu için canlı PWA ve service-worker akışı burada doğrulanamadı.
+- **Gerçek Cloudflare AI yanıtı** ve **iPhone mikrofonu** kullanıcı hesabı/telefonu olmadan test edilemedi.
