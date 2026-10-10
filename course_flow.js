@@ -20,12 +20,12 @@ function flowOpenTalk(l){if(!l||!flowCanTalk(l)){toast('Önce ödevini ve mini s
  state.activeLesson=l.id;state.lastCompletedLessonId=null;if(typeof live!=='undefined'){live.lastAnswer=flowPrompt(l);live.lastAssessment=null;live.error='';}state.lessonConversation={lessonId:l.id,started:Date.now()};save();speakMode='live';go('speaking');
 }
 function flowOnSpeech(lessonId,utterance,assessment,source){const session=state.lessonConversation;if(!session||session.lessonId!==lessonId)return;
- const l=LESSONS.find(x=>x.id===lessonId);if(!l||flowLegacyPassed(l)||!flowQuizDone(l))return;
+ const l=LESSONS.find(x=>x.id===lessonId);if(!l||flowLegacyPassed(l)||!flowQuizDone(l)||assessment.status==='help')return;
  const f=flowFor(l);const normalized=String(utterance||'').toLowerCase().replace(/[^a-z]+/g,' ').trim();const fresh=!f.talkHistory.some(x=>x.status==='correct'&&x.onTopic&&String(x.utterance||'').toLowerCase().replace(/[^a-z]+/g,' ').trim()===normalized);
  const valid=assessment.status==='correct'&&assessment.onTopic===true&&normalized.split(' ').filter(Boolean).length>=3&&fresh;
  f.talkHistory=[...(f.talkHistory||[]),{at:Date.now(),utterance:String(utterance).slice(0,150),status:assessment.status,onTopic:assessment.onTopic===true,source}].slice(-12);
  if(valid)f.talkCorrect=Math.min(FLOW_TALK_TARGET,(Number(f.talkCorrect)||0)+1);
- else if(assessment.status==='needs_practice'||assessment.onTopic===false)f.talkCorrect=0;
+ else if(assessment.status==='needs_practice'||(assessment.status==='correct'&&assessment.onTopic===false))f.talkCorrect=0;
  if(f.talkCorrect>=FLOW_TALK_TARGET&&!f.finished){f.finished=Date.now();state.completed[l.id]={score:f.quizScore,ts:Date.now(),pathVersion:29};state.lessonConversation=null;state.lastCompletedLessonId=l.id;toast('Harika! '+l.title+' dersini tamamladın.');if(typeof directorInvalidate==='function')directorInvalidate();}
  save();
 }

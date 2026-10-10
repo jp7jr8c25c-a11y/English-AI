@@ -1,0 +1,23 @@
+/* Voice-first iPhone PWA: speech primary; optional transcripts secondary */
+.voice-first-stage{box-shadow:0 0 42px #4276fa29!important}
+.voice-first-stage .live-avatar-ring{filter:drop-shadow(0 0 16px #7c73f05e)}
+.voice-first-stage:has(.mic-control.speaking) .live-avatar-ring{animation:teacher-voice-glow 1.35s ease-in-out infinite alternate}
+@keyframes teacher-voice-glow{from{filter:drop-shadow(0 0 7px #519aff52)}to{filter:drop-shadow(0 0 30px #ae75ffbd)}}
+.voice-call-start{margin-top:8px!important;min-height:56px!important;font-weight:750!important;background:linear-gradient(95deg,#3976fa,#8c59df)!important;color:white!important}
+.voice-switches{display:flex;flex-wrap:wrap;gap:9px;margin:12px 0}
+.voice-switches button{flex:1;min-height:43px;white-space:normal}
+.voice-sound-help{font-size:12px;line-height:1.6;background:#14234b;border:1px solid #415ea8;border-radius:14px;padding:12px;margin-bottom:10px;color:#d1e8ff}
+.voice-sound-help button{margin:2px 3px;min-height:36px;color:white}
+#live-text-details[hidden],#live-pending[hidden],#live-audio-retry[hidden],#live-error[hidden]{display:none!important}
+.voice-first-stage .live-avatar-speech{font-size:13px;line-height:1.4}
+@media(max-width:375px){.voice-switches{display:grid;grid-template-columns:1fr 1fr}.voice-switches button{font-size:11px}}
+@media(prefers-reduced-motion:reduce){.voice-first-stage .live-avatar-ring{animation:none!important}}
+
+/* Bilingual iPhone voice-tutor language choice */
+.voice-language-panel{background:#101a3c;border:1px solid #405eab;border-radius:16px;padding:12px;margin:12px 0;color:#e5ecff}
+.voice-language-panel strong{display:block;font-size:14px;margin-bottom:9px}
+.voice-language-buttons{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.voice-language-buttons .mini-tab{font-size:12px;min-height:46px;white-space:normal;border-radius:12px}
+.voice-language-buttons .mini-tab.on{border-color:#75c9ff;background:#194c80;color:#fff}
+.voice-language-panel p{font-size:12px;line-height:1.45;margin:9px 0 0;color:#b8ccf7}
+@media(max-width:350px){.voice-language-buttons .mini-tab{font-size:11px}}

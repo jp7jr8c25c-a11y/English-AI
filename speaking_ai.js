@@ -1,7 +1,7 @@
 'use strict';
 // v2.8 - Transcript-based speaking feedback and bounded local learning memory.
 // Author: Ali Erkonak. These are text/grammar insights, NOT pronunciation scores.
-const SPEAKING_STATUSES=['correct','needs_practice','uncertain'];
+const SPEAKING_STATUSES=['correct','needs_practice','uncertain','help'];
 function speakingStore(){
  if(!state.speakingInsights||typeof state.speakingInsights!=='object'||Array.isArray(state.speakingInsights))
   state.speakingInsights={total:0,correct:0,needsPractice:0,uncertain:0,patterns:{},recent:[]};
@@ -15,10 +15,11 @@ function speakingValidate(response){
  if(!r||typeof r!=='object'||Array.isArray(r)||!SPEAKING_STATUSES.includes(r.status))throw Error('AI konuşma değerlendirmesi geçersiz.');
  const take=(v,max)=>typeof v==='string'?v.trim().slice(0,max):'';
  const reply=take(r.reply,500),feedbackTr=take(r.feedbackTr,450),corrected=take(r.corrected,240),focus=take(r.focus,90),nextQuestion=take(r.nextQuestion,210);
- if(!reply||!feedbackTr||!nextQuestion||!focus||(r.status==='needs_practice'&&!corrected))throw Error('AI konuşma geri bildirimi eksik.');
+ if(!reply||!feedbackTr||!nextQuestion||!focus||(r.status==='needs_practice'&&!corrected)||(r.status==='help'&&r.onTopic!==false))throw Error('AI konuşma geri bildirimi eksik veya geçersiz.');
  return {status:r.status,reply,feedbackTr,corrected,focus,nextQuestion,onTopic:r.onTopic===true};
 }
 function speakingCommit(message,assessment,source='typed'){
+ if(assessment.status==='help'){activity();save();return;} // Turkish tutoring is never an English exam attempt.
  const s=speakingStore(),at=Date.now(),focus=String(assessment.focus||'Genel konuşma').slice(0,90);
  s.total=Math.min(1000000,(Number(s.total)||0)+1);
  if(assessment.status==='correct')s.correct=Math.min(1000000,(Number(s.correct)||0)+1);
@@ -47,6 +48,6 @@ function speakingLessonNote(l){
 }
 function speakingFeedbackHtml(a){
  if(!a)return '<p class="muted">İlk cümleni söyledikten sonra AI yazıya çevrilen cümleyi inceleyecek.</p>';
- const status=a.status==='correct'?'✓ Cümle uygun':a.status==='needs_practice'?'↻ Birlikte düzeltelim':'? Metin belirsiz';
+ const status=a.status==='help'?'🇹🇷 Türkçe öğretmen açıklaması':a.status==='correct'?'✓ Cümle uygun':a.status==='needs_practice'?'↻ Birlikte düzeltelim':'? Metin belirsiz';
  return `<div class="speaking-feedback ${h(a.status)}"><span class="speaking-review-badge">${status}</span><p>${h(a.feedbackTr)}</p>${a.corrected?`<div class="speaking-corrected"><strong>Örnek cümle</strong><span>${h(a.corrected)}</span></div>`:''}<div class="speaking-next"><strong>Sonraki konuşma sorusu</strong><span>${h(a.nextQuestion)}</span></div></div>`;
 }
