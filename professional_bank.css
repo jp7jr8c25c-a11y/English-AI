@@ -1,0 +1,8 @@
+
+.pro-instructor {margin:18px 0}
+.pro-instructor h2 {margin:9px 0 12px;font-size:19px}
+.pro-instructor-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:12px}
+.pro-instructor-grid>div {min-width:0;border:1px solid rgba(118,139,237,.26);border-radius:14px;padding:12px;background:rgba(20,31,71,.62)}
+.pro-instructor-grid small {color:#8bd9fa;letter-spacing:.02em;font-weight:700}
+.pro-instructor-grid p {margin:7px 0 0;line-height:1.47;overflow-wrap:anywhere;font-size:14px}
+@media(max-width:375px) {.pro-instructor-grid {grid-template-columns:1fr}}
