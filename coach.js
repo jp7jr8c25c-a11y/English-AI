@@ -43,7 +43,7 @@ async function coachRequest(l,phase,answer='',previous=null){
  if(!coachValidLesson(l))throw Error('Bu ders henüz açılmadı.');
  const session=previous||coachSession(l)||coachMake(l);
  const history=(session.history||[]).slice(-6).map(x=>({question:String(x.question||'').slice(0,360),answer:String(x.answer||'').slice(0,550),correct:!!x.correct}));
- const body={action:'coach_turn',phase,lesson:{id:l.id,level:l.level,title:l.title,rule:l.rule,examples:l.examples.slice(0,4)},answer:String(answer||'').slice(0,550),question:phase==='answer'?String(session.question||'').slice(0,360):'',history,mistakes:Object.values(state.misses).slice(-5).map(x=>String(x?.title||'').slice(0,120))};
+ const body={action:'coach_turn',phase,lesson:{id:l.id,level:l.level,title:l.title,rule:l.rule,examples:l.examples.slice(0,4)},answer:String(answer||'').slice(0,550),question:phase==='answer'?String(session.question||'').slice(0,360):'',history,mistakes:[...Object.values(state.misses).slice(-4).map(x=>String(x?.title||'').slice(0,120)),...speakingSummary().patterns.slice(0,3).map(x=>'Konuşma hatası: '+x.focus)].slice(0,7)};
  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),50000);
  try{
   const response=await fetch(state.settings.worker,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+state.settings.token},body:JSON.stringify(body),signal:controller.signal});
