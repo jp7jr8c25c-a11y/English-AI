@@ -1,0 +1,8 @@
+
+.placement-welcome,.placement-panel{background:linear-gradient(145deg,#141f51,#0a112b);border:1px solid #6374d4;border-radius:24px;padding:22px 18px;margin:14px 0;box-shadow:0 13px 35px #0006}
+.placement-welcome h1{font-size:clamp(25px,7vw,34px);line-height:1.2;max-width:22ch;margin:20px 0}
+.placement-welcome p{color:#c2d2f8;line-height:1.65}
+.placement-illustration{display:flex;align-items:center;gap:10px;font-size:35px;margin:24px 0}.placement-illustration span{font-size:13px;color:#d9e4ff}
+.placement-panel h1{font-size:26px;margin:24px 0 12px}.placement-prompt{font-size:clamp(17px,4.6vw,23px);line-height:1.5;margin-bottom:22px}.placement-options{display:grid;gap:11px;margin:20px 0}.placement-option{color:#eef5ff;text-align:left;background:#152659;border:1px solid #4764a5;border-radius:16px;padding:15px 13px;min-height:52px}.placement-option:active{background:#274b87}
+.placement-panel .progress{margin-top:16px}.placement-banner{border:1px solid #627fff;background:#1a2456;border-radius:18px;padding:15px;margin:4px 0 18px}.placement-banner strong{font-size:14px}.placement-banner p{font-size:12px;color:#c4d5f7;line-height:1.55}.placement-banner .btn{margin:6px 0}.placement-banner.completed{display:flex;gap:12px;align-items:center;justify-content:space-between}.placement-banner.completed .btn{font-size:11px;padding:10px;flex-shrink:0}
+.mastery-unit ol{padding-left:20px;line-height:1.75;color:#dce7ff}.mastery-unit li{margin:8px 0}

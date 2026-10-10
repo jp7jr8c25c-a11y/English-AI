@@ -1,0 +1,25 @@
+/* v3.0 Home rebuilt: no screenshot text baked into hero; iPhone safe spacing. */
+:root{--v3-space:14px}
+html,body{width:100%;overflow-x:hidden}
+.shell{min-height:100svh;overflow-x:clip}
+main#view{padding:calc(10px + env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) calc(148px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));overflow-x:clip}
+.teacher-hero{position:relative;isolation:isolate;display:flex;align-items:stretch;min-height:245px;height:auto;aspect-ratio:1.46;margin-bottom:18px;overflow:hidden;background:linear-gradient(120deg,#172b68 0%,#152050 47%,#161040 100%)}
+.teacher-hero::before{content:'';position:absolute;z-index:0;right:-9%;top:3%;width:57%;aspect-ratio:1;border:3px solid #368af5aa;border-radius:50%;box-shadow:0 0 24px #6d52ffd0;pointer-events:none}
+.teacher-hero::after{content:'';position:absolute;inset:0;z-index:2;background:linear-gradient(90deg,#142559 0%,#182354ec 27%,#15245656 49%,transparent 74%);pointer-events:none}
+.teacher-hero .teacher-portrait{position:absolute;top:0;right:0;bottom:0;width:59%;height:100%;max-width:none;object-fit:cover;object-position:53% 12%;opacity:1;mask-image:linear-gradient(90deg,transparent 0%,#000 24%,#000 100%);z-index:1}
+.teacher-hero .hero-copy{position:relative;z-index:3;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:11px;width:58%;padding:19px 0 20px 16px;min-width:0}
+.teacher-hero .hero-small{font-size:10px;line-height:1.35;max-width:98%;padding:6px 9px;white-space:normal}
+.teacher-hero .hero-copy p{font-size:clamp(14px,3.55vw,17px);line-height:1.48;max-width:23ch;font-weight:720;margin:0;color:#fff;text-shadow:0 1px 8px #05112e}
+.teacher-hero .hero-play{font-size:12px;max-width:100%;flex-shrink:0;min-height:42px;margin-top:2px}.teacher-hero .hero-play span{font-size:11px;white-space:normal}
+.bottom-nav{z-index:30;grid-template-columns:repeat(5,minmax(0,1fr));min-height:calc(76px + env(safe-area-inset-bottom));padding:8px max(7px,env(safe-area-inset-left)) calc(8px + env(safe-area-inset-bottom)) max(7px,env(safe-area-inset-right));border-radius:18px 18px 0 0;align-items:start}
+.bottom-nav .navitem{min-width:0;min-height:61px;gap:4px;padding:7px 0;border-radius:14px}.bottom-nav .navitem span{font-size:22px}.bottom-nav .navitem small{font-size:clamp(9px,2.48vw,10px);line-height:1.25;overflow-wrap:anywhere}
+.premium-intro h1{line-height:1.18}.premium-panel{margin-bottom:17px}.next-lesson{margin-bottom:20px}.next-details h2{font-size:clamp(17px,4.7vw,22px)}
+.plan-track{gap:3px}.plan-icon{width:clamp(40px,12vw,59px);height:clamp(40px,12vw,59px)}
+.next-start{min-height:50px;position:relative;z-index:1}.placement-banner{margin-bottom:17px}
+@media(max-width:375px){.teacher-hero{min-height:220px;aspect-ratio:1.38}.teacher-hero .hero-copy{padding:12px 0 13px 11px;width:63%;gap:8px}.teacher-hero .hero-copy p{font-size:12px;line-height:1.44}.teacher-hero .hero-play{font-size:10px;padding:8px 9px}.teacher-hero .teacher-portrait{width:59%;right:0}.teacher-hero::before{width:66%;right:-15%}}
+@media(min-width:430px){.teacher-hero{min-height:268px}.teacher-hero .hero-copy{padding-left:22px}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+
+.bottom-nav .navitem span{display:grid;place-items:center;height:26px}.bottom-nav .navitem svg{width:23px;height:23px;flex:none}.bottom-nav .navitem.active svg{filter:drop-shadow(0 0 7px #9f70ff)}
+
+.teacher-hero .hero-copy p{display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden;max-height:7.6em}
