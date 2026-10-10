@@ -87,18 +87,38 @@ function liveSetInputLanguage(lang){
  if(wasListening&&live.active)liveCapture();
 }
 function liveIsTurkishText(value){return /[çğıöşüÇĞİÖŞÜ]|\b(?:merhaba|nasıl|neden|ne demek|anlamı|türkçe|anlat|açıkla|bilmiyorum|öğret|çalışacağım|cümlede|kullanılır|örnek ver|kelime)\b/i.test(value);}
+// Typed multilingual speech pipeline: every utterance is tagged with its own language.
+// Extract English quoted examples inside Turkish teacher explanations for the correct iOS voice.
+function liveSplitBilingualSpeech(value,primary='tr'){
+ const text=String(value||'').replace(/\*\*/g,'').replace(/[`]/g,'').trim();if(!text)return [];
+ const pieces=[];const quoted=/[“"]([^”"]{2,160})[”"]/g;
+ let offset=0,match;
+ const english=(v)=>{let w=String(v||'').trim();if(!w)return false;
+  if(/[çğıöşüÇĞİÖŞÜ]/.test(w))return false;
+  const en=/\b(?:i|you|he|she|we|they|am|is|are|do|does|did|have|has|can|could|would|should|will|was|were|the|my|your|at|from|to|for|there|this|that|it|not|don't|work|study|working|learning|every|day|now|hello|please|thank|where|what|how|why)\b/gi;
+  const tr=/\b(?:ben|sen|biz|onlar|bir|ile|ve|ya|için|neden|nasıl|olarak|değil|bunu|şimdi|burada|söyle|cümle|demek)\b/gi;
+  return (w.match(en)||[]).length>=1&&(w.match(en)||[]).length>(w.match(tr)||[]).length;
+ };
+ function append(piece,lang){piece=String(piece||'').trim();if(piece)pieces.push({lang,text:piece});}
+ while((match=quoted.exec(text))){
+  append(text.slice(offset,match.index),primary);
+  const part=match[1];append(part,english(part)?'en':primary);offset=match.index+match[0].length;
+ }
+ append(text.slice(offset),primary);
+ return pieces.length?pieces:[{lang:primary,text}];
+}
 function liveSpeechSegmentsForAssessment(a){
  if(a.status==='help')return [
-  {lang:'tr',text:a.reply},
+  ...liveSplitBilingualSpeech(a.reply,'tr'),
   ...(a.corrected?[{lang:'en',text:a.corrected}]:[]),
   {lang:'en',text:a.nextQuestion}
  ];
  if(a.status==='needs_practice')return [
-  {lang:'tr',text:a.feedbackTr},
+  ...liveSplitBilingualSpeech(a.feedbackTr,'tr'),
   ...(a.corrected?[{lang:'en',text:a.corrected}]:[]),
   {lang:'en',text:a.reply}
  ];
- if(a.status==='uncertain')return [{lang:'tr',text:a.feedbackTr},{lang:'en',text:a.reply}];
+ if(a.status==='uncertain')return [...liveSplitBilingualSpeech(a.feedbackTr,'tr'),{lang:'en',text:a.reply}];
  return [{lang:'en',text:a.reply}];
 }
 function liveSpeechFinished(audible=true){
@@ -233,7 +253,7 @@ async function liveRequestHelp(message){
   const answer=String(res.reply||'').trim().slice(0,1200);if(!answer)throw Error('AI yanıtı boş.');
   // Help commands are NOT student English utterances; never grade them.
   liveLog('assistant',answer);live.lastAnswer=answer;live.lastSpeechSegments=null;live.busy=false;liveReleaseHardware();
-  liveSpeak(answer,liveSpeechFinished);
+  liveSpeak(answer,liveSpeechFinished,liveSplitBilingualSpeech(answer,live.inputLanguage==='tr'?'tr':'en'));
  }catch(e){if(live.seq!==seq)return;live.busy=false;liveSet('idle','Açıklama alınamadı',String(e.message||e).slice(0,160));if(live.active)liveSet('ready','Hazır · Yeni kayıt için mikrofona dokun');}
 }
 function liveDetermineLang(segment){return /[çğıöşüÇĞİÖŞÜ]|\b(merhaba|açıkla|çünkü|olduğu|şimdi|önce|sonra|doğru|yanlış|demek|türkçe|cümle|anlamı|öğren|kelime|çok|bunu|böyle|şöyle|edilir|kullanılır|bu|senin|benim|neden|nasıl|için|lütfen|öğretmen|konuşalım|şimdi|şunu|tekrar|yapmalısın)\b/i.test(segment)?'tr':'en';}
@@ -245,7 +265,7 @@ function liveSpeak(text,finished,segments){
  if(!('speechSynthesis'in window)||typeof SpeechSynthesisUtterance==='undefined'){
   liveSet('ready','Sesli okuma desteklenmiyor','Bu Safari sürümünde sesli okuma yok.');if(finished)finished(false);return;
  }
- const chunks=Array.isArray(segments)&&segments.length?segments.filter(s=>s&&['tr','en'].includes(s.lang)).flatMap(s=>liveSpeechChunks(s.text).map(text=>({text,lang:s.lang}))):liveSpeechChunks(text).map(text=>({text,lang:liveDetermineLang(text)}));
+ const chunks=Array.isArray(segments)&&segments.length?segments.filter(s=>s&&['tr','en'].includes(s.lang)).flatMap(s=>liveSpeechChunks(s.text).map(text=>({text,lang:s.lang}))):liveSplitBilingualSpeech(text,live.inputLanguage==='tr'?'tr':'en').flatMap(s=>liveSpeechChunks(s.text).map(text=>({text,lang:s.lang})));
  if(!chunks.length){if(finished)finished(false);return;}
  liveSet('speaking','🔊 AI öğretmen sesli konuşuyor…');let index=0;
  const finish=(ok)=>{if(version!==live.speechToken)return;if(live.speakTimer){clearTimeout(live.speakTimer);live.speakTimer=null;}live.speechUtterance=null;if(finished)finished(ok);else liveSet('ready','Hazır');};
@@ -258,7 +278,7 @@ function liveSpeak(text,finished,segments){
   let settled=false,started=false;
   const clear=()=>{if(live.speakTimer){clearTimeout(live.speakTimer);live.speakTimer=null;}};
   u.onstart=()=>{started=true;clear();liveSet('speaking','🔊 Öğretmen konuşuyor · Şimdi dinle');live.speakTimer=setTimeout(()=>{if(version!==live.speechToken||settled)return;try{speechSynthesis.resume()}catch(e){};live.speakTimer=setTimeout(()=>{if(!settled){settled=true;finish(false);}},5000);},Math.max(12000,piece.length*270));};
-  u.onend=()=>{if(settled||version!==live.speechToken)return;settled=true;clear();next();};
+  u.onend=()=>{if(settled||version!==live.speechToken)return;settled=true;clear();if(index<chunks.length&&chunks[index].lang!==lang){live.speakTimer=setTimeout(()=>{live.speakTimer=null;next();},220);}else next();};
   u.onerror=(e)=>{if(settled||version!==live.speechToken)return;settled=true;clear();liveSet('ready','Öğretmen sesi çalınamadı','iPhone sesli okuma hatası: '+String(e?.error||'unknown')+'. «Tekrar söyle» ile dene.');finish(false);};
   try{speechSynthesis.speak(u);
    // On iOS, a queued utterance may never start if the initial play gesture is blocked.

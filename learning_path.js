@@ -1,0 +1,19 @@
+'use strict';
+// Realistic scope map; no false claim that 144 short lessons prove C2 proficiency.
+// This is a structured goal guide for the current course and its assessment.
+const PROFICIENCY_MAP={
+ A0:{name:'Sıfırdan başlangıç',goal:'Sesler, alfabe, sayılar, tanışma ve en basit cümleler',skills:['Harfler, heceleme, dinleme ayrımı','Be fiili ve kişi zamirleri','Gündelik kalıplar, sayılar ve temel sorular'],task:'Adını, nereli olduğunu ve günlük bir ihtiyacını anlat.'},
+ A1:{name:'Temel iletişim',goal:'Rutinler, şimdiki zaman, basit sorular ve günlük ihtiyaçlar',skills:['Günlük rutin ve sıklık','Olumsuz ve soru yapıları','Kısa diyalog, dinleme ve telaffuz'],task:'Bir gününü geçmiş/şimdi ayrımıyla anlat.'},
+ A2:{name:'Bağımsız günlük yaşam',goal:'Seyahat, alışveriş, yön tarifi, geçmiş ve gelecek planları',skills:['Seyahat, otel, restoran ve ulaşım','Geçmiş–gelecek zaman ilişkisi','Kısa yazışma ve karşılıklı soru'],task:'Seyahatte bir sorunu çözmek için karşılıklı konuş.'},
+ B1:{name:'Bağımsız anlatım',goal:'Deneyim, görüş, karşılaştırma, gerekçe ve akıcı kısa konuşmalar',skills:['Deneyimi anlatma ve öyküleme','Görüşünü gerekçeyle savunma','İş ve eğitimde anlaşılır iletişim'],task:'Bir deneyimini giriş, gelişme ve sonuçla anlat.'},
+ B2:{name:'İş ve profesyonel iletişim',goal:'Toplantı, iş e-postası, tartışma, öneri ve anlaşma',skills:['Profesyonel e-posta ve sunum','Problem çözme ve tartışma','Hızlı konuşma/dinleme stratejisi'],task:'Bir iş problemini açıklayıp iki çözüm öner.'},
+ C1:{name:'İleri akademik ve iş İngilizcesi',goal:'Karmaşık metinleri anlama, nüans, müzakere ve raporlama',skills:['Rapor ve akademik tartışma','Müzakere, diplomatik dil','Kaynak değerlendirme ve üslup'],task:'Karşı görüşü ele alıp dengeli bir rapor sun.'},
+ C2:{name:'Uzman düzey ifade',goal:'İnce anlam farkları, geniş kelime seçimi, ikna ve hassas anlatım',skills:['Retorik, söylem ve hassas anlam','Karmaşık kanıtın sentezi','Uzmanlık alanında doğal sunum'],task:'Farklı görüşleri eleştirel olarak sentezleyip savun.'}
+};
+function proficiencyRoadmap(){const current=currentLesson().level;
+ return `<section class="premium-panel road-panel"><h2>Başlangıçtan profesyonel İngilizceye</h2><p class="muted">Her seviyede dinleme, okuma, yazma ve konuşmayı birlikte geliştireceğiz. Ders sayısı tek başına akıcılık veya CEFR sertifikası değildir.</p>${Object.entries(PROFICIENCY_MAP).map(([level,r])=>`<details ${level===current?'open':''}><summary><strong>${level} · ${h(r.name)}</strong><small>${level===current?' · Şu anki seviye':''}</small></summary><p>${h(r.goal)}</p><ul>${r.skills.map(x=>`<li>${h(x)}</li>`).join('')}</ul><p><strong>Uygulama görevi:</strong> ${h(r.task)}</p></details>`).join('')}</section>`;
+}
+function proficiencyLessonAddon(l){let r=PROFICIENCY_MAP[l.level];let pos=LESSONS.findIndex(x=>x.id===l.id);let prev=pos>0?LESSONS[pos-1]:null;
+ let english=l.examples?.[0]||'';let meaning=LESSON_GUIDES[l.id]?.meanings?.[0]||l.tr||'';
+ return `<section class="premium-panel lesson-mastery"><h2>Bu dersin öğrenme hedefleri</h2><p><strong>Seviye:</strong> ${h(l.level)} · ${h(r.name)}</p><p><strong>Bu dersin amacı:</strong> ${h(l.rule)}</p>${prev?`<p><strong>Ön koşul:</strong> ${h(prev.title)}. Önceki dersin kazanımlarını tekrar et.</p>`:''}<div class="mastery-steps"><div><strong>1 · Kuralı anla</strong><p>Türkçe açıklamayı oku, kendi sözlerinle özetle.</p></div><div><strong>2 · Örneği çözümle</strong><p><b>${h(english)}</b> — ${h(meaning)}</p></div><div><strong>3 · Üret ve uygula</strong><p>Kuralı kullanarak iki farklı cümle kur. AI koçu cümlelerini değerlendirsin.</p></div><div><strong>4 · Kalıcı öğren</strong><p>Örnekleri ezbere kaydet, ödevi yap, sınavı geç ve aynı konuda canlı sohbet et.</p></div></div><p class="tiny">İçerik bir öğrenme rotasıdır. AI açıklaması ve konuşma geri bildirimi ayrıca kontrol edilir; telaffuz değerlendirmesi için gerçek ses analizi gerekebilir.</p></section>`;
+}
