@@ -399,6 +399,20 @@ const PLACEMENT_QUESTIONS=[
 
 function placementRequired(){return !state.placement?.level&&!Object.values(state.completed||{}).some(x=>Number(x?.score)>=75);}
 function placementDraft(){if(!state.placementDraft||typeof state.placementDraft!=='object')state.placementDraft={levelIndex:0,question:0,correct:0,results:[],started:Date.now(),writing:''};return state.placementDraft;}
+// Shuffle visible options once per question. Persist their order in the ongoing
+// placement draft so Safari re-renders/reopens never move buttons mid-question.
+// Original option indices are retained for grading and accessibility.
+function placementDisplayOptions(question,draft){
+ if(!draft.choiceOrders||typeof draft.choiceOrders!=='object')draft.choiceOrders={};
+ const key=draft.levelIndex+':'+draft.question;
+ const validOrder=x=>Array.isArray(x)&&x.length===question.options.length&&new Set(x).size===x.length&&x.every(v=>Number.isInteger(v)&&v>=0&&v<question.options.length);
+ if(!validOrder(draft.choiceOrders[key])){
+  const indices=question.options.map((_,i)=>i);
+  for(let i=indices.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[indices[i],indices[j]]=[indices[j],indices[i]];}
+  draft.choiceOrders[key]=indices;save();
+ }
+ return draft.choiceOrders[key].map(index=>({text:question.options[index],index}));
+}
 function placementLessonIndex(level){return Math.max(0,LESSONS.findIndex(l=>l.level===level));}
 function placementResultChoice(grade,writing=''){
  const level=PLACEMENT_LEVELS[Math.max(0,Math.min(6,grade))];
@@ -425,7 +439,7 @@ function renderPlacement(){if(!state.placementDraft){renderPlacementWelcome();re
  }
  const lvl=PLACEMENT_LEVELS[d.levelIndex],q=PLACEMENT_QUESTIONS.filter(x=>x.level===lvl)[d.question];if(!q){d.phase='writing';renderPlacement();return;}
  const total=PLACEMENT_LEVELS.length*4, done=d.levelIndex*4+d.question;
- root.innerHTML=`<section class="placement-panel"><div class="premium-row"><span class="badge">Seviye tespiti · ${lvl}</span><span class="muted">${d.question+1}/4</span></div><div class="progress"><div style="width:${Math.round(done/total*100)}%"></div></div><h1>${q.kind==='listening'?'Dinleme':q.kind==='reading'?'Okuma':q.kind==='grammar'?'Dilbilgisi':'Kelime bilgisi'}</h1><h2 class="placement-prompt">${h(q.prompt)}</h2>${q.audio?`<button class="btn secondary full" data-action="placement-listen">🔊 İngilizce cümleyi dinle</button><p class="muted">Dinledikten sonra işaretle. Cümle yazılı gösterilmez.</p>`:''}<div class="placement-options">${q.options.map((x,i)=>`<button class="placement-option" data-action="placement-answer" data-choice="${i}">${h(x)}</button>`).join('')}</div><p class="tiny">İstersen bilmediğin soruyu tahmin edebilirsin. Test sonucu öğrenme başlangıcını belirler; ders başarılarını değiştirmez.</p></section>`;
+ root.innerHTML=`<section class="placement-panel"><div class="premium-row"><span class="badge">Seviye tespiti · ${lvl}</span><span class="muted">${d.question+1}/4</span></div><div class="progress"><div style="width:${Math.round(done/total*100)}%"></div></div><h1>${q.kind==='listening'?'Dinleme':q.kind==='reading'?'Okuma':q.kind==='grammar'?'Dilbilgisi':'Kelime bilgisi'}</h1><h2 class="placement-prompt">${h(q.prompt)}</h2>${q.audio?`<button class="btn secondary full" data-action="placement-listen">🔊 İngilizce cümleyi dinle</button><p class="muted">Dinledikten sonra işaretle. Cümle yazılı gösterilmez.</p>`:''}<div class="placement-options">${placementDisplayOptions(q,d).map(o=>`<button class="placement-option" data-action="placement-answer" data-choice="${o.index}">${h(o.text)}</button>`).join('')}</div><p class="tiny">İstersen bilmediğin soruyu tahmin edebilirsin. Test sonucu öğrenme başlangıcını belirler; ders başarılarını değiştirmez.</p></section>`;
 }
 let placementBusy=false;
 async function placementFinish(){if(placementBusy)return;const d=placementDraft(),candidate=d.candidate??d.levelIndex,writing=String(document.getElementById('placement-writing')?.value||'').trim().slice(0,600);d.writing=writing;save();
