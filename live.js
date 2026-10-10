@@ -2,28 +2,32 @@
 // English AI Teacher v2.4 - Voice conversation (turn-taking, experimental Safari PWA)
 // Developer: Ali Erkonak. Microphone audio is only processed for transcription,
 // never stored; transcribed text stays in existing local progress / backup.
-const live={active:false,stream:null,ctx:null,source:null,analyser:null,rec:null,chunks:[],pulse:null,speakTimer:null,speechToken:0,seq:0,phase:'idle',status:'Başlatmaya hazır',error:'',history:[],busy:false,heardSpeech:false,voiceStart:0,lastLoud:0,firstLoud:0,recordStart:0,autoListen:true,slow:false,lastAnswer:'',mime:'',silentStop:false,volume:0,lastAssessment:null};
+const live={active:false,stream:null,ctx:null,source:null,analyser:null,rec:null,chunks:[],pulse:null,speakTimer:null,speechToken:0,seq:0,phase:'idle',status:'Başlatmaya hazır',error:'',history:[],busy:false,heardSpeech:false,voiceStart:0,lastLoud:0,firstLoud:0,recordStart:0,autoListen:true,slow:false,lastAnswer:'',mime:'',silentStop:false,volume:0,lastAssessment:null,failedAudio:null,recognized:'',meter:0};
 function liveConversation(){return Array.isArray(state.voiceHistory)?state.voiceHistory:[];}
 function liveReady(){return state.settings.ai==='cloud'&&workerAddressValid(state.settings.worker)&&!!state.settings.token;}
 function liveSet(phase,status,error){live.phase=phase;live.status=status;if(typeof error==='string')live.error=error;liveUpdate();}
 function liveUpdate(){
  if(page!=='speaking'||speakMode!=='live')return;
  const el=document.getElementById('live-status');if(el)el.textContent=live.status;
- const orb=document.getElementById('live-orb');if(orb){orb.className='mic-control '+(live.phase==='listening'?'listening':live.phase==='speaking'?'speaking':live.phase==='thinking'?'thinking':'');orb.textContent=live.active?'■':'🎙';orb.setAttribute('aria-label',live.active?'Görüşmeyi bitir':'Görüşmeyi başlat');}
+ const orb=document.getElementById('live-orb');if(orb){const recording=live.phase==='listening';orb.className='mic-control '+(recording?'listening':live.phase==='speaking'?'speaking':live.phase==='thinking'?'thinking':'');orb.textContent=recording?'■':'🎙';orb.dataset.action=recording?'live-done':live.active?'live-record':'live-start';orb.disabled=live.busy||live.phase==='thinking'||live.phase==='speaking';orb.setAttribute('aria-label',recording?'Sözümü bitirdim':live.active?'Yeni ses kaydı başlat':'Mikrofonu aç');}
  const err=document.getElementById('live-error');if(err){err.textContent=live.error;err.hidden=!live.error;}
- const start=document.getElementById('live-start');if(start){start.textContent=live.active?'■ Görüşmeyi bitir':'▶ Canlı görüşmeyi başlat';start.dataset.action=live.active?'live-stop':'live-start';}
- const mic=document.getElementById('live-orb');if(mic)mic.dataset.action=live.active?'live-stop':'live-start';
+ const start=document.getElementById('live-start');if(start){start.textContent=live.active?'■ Görüşmeyi bitir':'▶ Mikrofonu aç ve konuş';start.dataset.action=live.active?'live-stop':'live-start';}
+ const measure=document.getElementById('live-volume');if(measure?.style)measure.style.width=Math.round(live.meter*100)+'%';
+ const elapsed=document.getElementById('live-elapsed');if(elapsed)elapsed.textContent=live.phase==='listening'?`${Math.max(0,Math.round((performance.now()-live.recordStart)/1000))} sn / 30 sn`:'Kayıt için mikrofona dokun';
+ const recognized=document.getElementById('live-recognized');if(recognized)recognized.textContent=live.recognized?'Algılanan: '+live.recognized.slice(0,500):'Henüz konuşma algılanmadı.';
+ const retryAudio=document.getElementById('live-audio-retry');if(retryAudio)retryAudio.hidden=!live.failedAudio;
  const done=document.getElementById('live-done');if(done)done.disabled=!live.active||live.phase!=='listening';
  const last=document.getElementById('live-last-response');if(last)last.textContent=live.lastAnswer||'Hello! Let’s practice English together.';
  const feedback=document.getElementById('live-feedback');if(feedback)feedback.innerHTML=speakingFeedbackHtml(live.lastAssessment);
  const pending=document.getElementById('live-pending');if(pending){const text=state.pendingVoiceTurn?.content||'';pending.hidden=!text;if(text)pending.querySelector('p').textContent='Gönderilemeyen cümle: '+text.slice(0,220);}
- const box=document.getElementById('live-transcript');if(box){box.innerHTML=liveConversation().slice(-16).map(m=>`<div class="bubble ${m.role==='user'?'user':'assistant'}"><span class="live-label">${m.role==='user'?'SEN':'AI ÖĞRETMEN'}</span>${h(m.content)}${m.assessment?.status==='needs_practice'&&m.assessment?.corrected?`<small class="live-correction">Örnek: ${h(m.assessment.corrected)}</small>`:''}</div>`).join('')||'<p class="muted">Görüşmeyi başlat. Öğretmen konuşacak, ardından seni dinleyecek.</p>';box.scrollTop=box.scrollHeight;}
+ const box=document.getElementById('live-transcript');if(box){box.innerHTML=liveConversation().slice(-16).map(m=>`<div class="bubble ${m.role==='user'?'user':'assistant'}"><span class="live-label">${m.role==='user'?'SEN':'AI ÖĞRETMEN'}</span>${h(m.content)}${m.assessment?.status==='needs_practice'&&m.assessment?.corrected?`<small class="live-correction">Örnek: ${h(m.assessment.corrected)}</small>`:''}</div>`).join('')||'<p class="muted">Mikrofona dokun, konuş ve «Sözümü bitirdim» ile kaydı gönder.</p>';box.scrollTop=box.scrollHeight;}
 }
 function renderLiveVoice(){
- const ready=liveReady();
+ const ready=liveReady(),lesson=flowActiveLesson(),progress=lesson?flowFor(lesson):null;
  root.innerHTML=`<div class="live-page-head"><button class="live-back" data-page="home" aria-label="Ana sayfaya dön">‹</button><div><h1>Canlı AI görüşmesi</h1><p>English AI Teacher ile konuşuyorsun</p></div><span class="live-online ${ready?'':'offline'}">${ready?'AI çevrimiçi':'AI çevrimdışı'}</span></div>
- <div class="live-stage premium-live"><div class="live-avatar-ring"><img src="teacher-avatar.webp" alt="AI öğretmen avatarı" width="448" height="568"></div><div class="live-avatar-speech" id="live-last-response">${h(live.lastAnswer||'Hello! Let’s practice English together.')}</div><div class="live-listen-banner"><h2 id="live-status" role="status">${h(live.status)}</h2><p>${live.phase==='listening'?'Konuşmaya başlayabilirsin…':'Mikrofon ile karşılıklı pratik yap'}</p></div><button class="mic-control" id="live-orb" data-action="${live.active?'live-stop':'live-start'}" aria-label="Görüşmeyi başlat">🎙</button><p class="live-mic-help">${live.active?'Dokunarak görüşmeyi bitirebilirsin':'Konuşmayı başlatmak için mikrofona dokun'}</p><button class="btn secondary full" id="live-start" data-action="${live.active?'live-stop':'live-start'}">${live.active?'■ Görüşmeyi bitir':'▶ Canlı görüşmeyi başlat'}</button></div>
+ ${!lesson&&state.lastCompletedLessonId?`<section class="premium-panel flow-live"><strong>✓ Konu tamamlandı!</strong><p>İki uygun konuşma yanıtın kaydedildi. Sıradaki derse geçebilirsin.</p><button class="btn full" data-page="courses">Derslere devam et →</button></section>`:''}${lesson?`<section class="premium-panel flow-live"><strong>🎓 Ders sonrası canlı uygulama · ${h(lesson.title)}</strong><p>${h(flowPrompt(lesson))}</p><span class="badge">${progress.talkCorrect}/${FLOW_TALK_TARGET} konuya uygun doğru yanıt</span></section>`:''}<div class="live-stage premium-live"><div class="live-avatar-ring"><img src="teacher-avatar.webp" alt="AI öğretmen avatarı" width="448" height="568"></div><div class="live-avatar-speech" id="live-last-response">${h(live.lastAnswer||'Hello! Let’s practice English together.')}</div><div class="live-listen-banner"><h2 id="live-status" role="status">${h(live.status)}</h2><p>${live.phase==='listening'?'Konuşmaya başlayabilirsin…':'Mikrofon ile karşılıklı pratik yap'}</p></div><button class="mic-control" id="live-orb" data-action="${live.active?'live-stop':'live-start'}" aria-label="Görüşmeyi başlat">🎙</button><p class="live-mic-help">Mikrofona dokunarak ses kaydet. Bitirdiğinde durdur. Otomatik açılıp kapanmaz.</p><div class="live-audio-meter" aria-label="Mikrofon ses seviyesi"><div id="live-volume"></div></div><p class="live-mic-help" id="live-elapsed">Kayıt için mikrofona dokun</p><p class="live-recognized" id="live-recognized">${h(live.recognized?'Algılanan: '+live.recognized:'Henüz konuşma algılanmadı.')}</p><button class="btn secondary full" id="live-start" data-action="${live.active?'live-stop':'live-start'}">${live.active?'■ Görüşmeyi bitir':'▶ Mikrofonu aç ve konuş'}</button></div>
  ${ready?'':`<div class="warning">Canlı AI bağlantısı henüz kurulmadı. Ayarlar bölümünden Cloudflare AI erişimini etkinleştir. <button class="btn secondary" data-page="settings">Ayarları aç</button></div>`}
+ <button class="btn secondary full" id="live-audio-retry" data-action="live-audio-retry" ${live.failedAudio?'':'hidden'}>↻ Ses gönderimini yeniden dene</button>
  <div class="live-message" id="live-error" ${live.error?'':'hidden'} role="alert">${h(live.error)}</div>
  <section class="speaking-ai-card" aria-label="AI konuşma değerlendirmesi"><div class="row between"><strong>✦ AI Konuşma Koçu</strong><span>Metin analizi</span></div><div id="live-feedback">${speakingFeedbackHtml(live.lastAssessment)}</div><button class="mini-tab" data-action="live-practice">Bu konuda ek pratik yap</button></section>
  <section class="live-pending" id="live-pending" ${state.pendingVoiceTurn?.content?'':'hidden'}><strong>Gönderilmemiş cümle</strong><p>${h(state.pendingVoiceTurn?.content||'')}</p><div class="row"><button class="btn" data-action="live-retry">Yeniden dene</button><button class="btn secondary" data-action="live-discard">Vazgeç</button></div></section>
@@ -48,61 +52,55 @@ function liveEnd(quiet=false){
  live.seq++;live.active=false;live.busy=false;live.speechToken++;
  if(live.speakTimer){clearTimeout(live.speakTimer);live.speakTimer=null;}
  try{window.speechSynthesis?.cancel()}catch(e){}
- liveCleanupRecorder(true);liveReleaseHardware();live.phase='idle';live.status='Görüşme durduruldu';if(!quiet)live.error='';liveUpdate();
+ liveCleanupRecorder(true);liveReleaseHardware();live.failedAudio=null;live.meter=0;live.phase='idle';live.status='Görüşme durduruldu';if(!quiet)live.error='';liveUpdate();
 }
 async function liveStart(){
  if(live.active){liveEnd();return;}
  if(!liveReady()){liveSet('idle','AI bağlantısı eksik','Önce Ayarlar sayfasında Cloudflare gerçek AI bağlantısını etkinleştir.');return;}
  if(state.pendingVoiceTurn?.content){liveSet('idle','Gönderilemeyen cümle var','Önce cümleni yeniden dene veya vazgeç.');return;}
  if(!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder){liveSet('idle','Ses kaydı desteklenmiyor','Bu iPhone web görünümünde MediaRecorder veya mikrofon erişimi yok. Alttaki klavye diktesiyle sesli cevap alabilirsin.');return;}
- live.error='';live.active=true;live.busy=true;live.seq++;const seq=live.seq;
+ live.error='';live.active=true;live.busy=true;live.recognized='';live.failedAudio=null;live.seq++;const seq=live.seq;
  liveSet('thinking','Mikrofon izni isteniyor…');
  try{
   const stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
   if(!live.active||live.seq!==seq){stream.getTracks().forEach(t=>t.stop());return;}
   live.stream=stream;
   const AC=window.AudioContext||window.webkitAudioContext;
-  if(AC){live.ctx=new AC();live.source=live.ctx.createMediaStreamSource(stream);live.analyser=live.ctx.createAnalyser();live.analyser.fftSize=1024;live.source.connect(live.analyser);}
+  if(AC){try{live.ctx=new AC();live.ctx.resume?.().catch(()=>{});live.source=live.ctx.createMediaStreamSource(stream);live.analyser=live.ctx.createAnalyser();live.analyser.fftSize=1024;live.source.connect(live.analyser);}catch(e){try{live.ctx?.close()}catch(_){}live.ctx=null;live.analyser=null;live.source=null;/* Recording must still work without visual amplitude data. */}}
   live.busy=false;
-  live.status='Öğretmen konuşuyor';
-  // Starting speech here is part of the user's original tap, important for iOS playback.
-  live.lastAnswer='Hello! I am your English teacher. How are you today?';
-  liveSpeak(live.lastAnswer,()=>{if(live.active)liveCapture()});
+  liveCapture(); // Manual recording starts immediately after microphone permission.
+
  }catch(e){if(live.seq!==seq)return;live.active=false;live.busy=false;liveReleaseHardware();liveSet('idle','Mikrofon kullanılamıyor',liveMicError(e));}
 }
 function liveClipType(){if(!window.MediaRecorder)return '';const types=['audio/mp4','audio/webm;codecs=opus','audio/webm','audio/ogg'];return types.find(t=>MediaRecorder.isTypeSupported?.(t))||'';}
 function liveCapture(){
- if(!live.active||live.busy||!live.stream)return;
+ if(!live.active||live.busy||!live.stream||live.phase==='listening')return;
  try{
   liveCleanupRecorder(true);
-  const type=liveClipType();live.mime=type||'audio/mp4';live.chunks=[];
+  const type=liveClipType();live.mime=type||'audio/mp4';live.chunks=[];live.failedAudio=null;live.error='';
   const rec=new MediaRecorder(live.stream,type?{mimeType:type}:{});live.rec=rec;
-  live.heardSpeech=false;live.firstLoud=0;live.lastLoud=0;live.voiceStart=performance.now();live.recordStart=live.voiceStart;live.silentStop=false;
+  live.recordStart=performance.now();live.silentStop=false;live.meter=0;
   rec.ondataavailable=e=>{if(e.data?.size)live.chunks.push(e.data)};
-  rec.onerror=e=>{if(live.active){live.error='Ses kaydı hata verdi: '+String(e.error?.name||'iOS recorder');liveEnd(false)}};
+  rec.onerror=e=>{live.error='Ses kaydedilemedi: '+String(e.error?.name||'recorder');liveSet('ready','Kaydı yeniden başlat',live.error)};
   rec.onstop=()=>{
    if(live.pulse){clearInterval(live.pulse);live.pulse=null;}
    if(live.silentStop||!live.active||rec!==live.rec)return;
-   const chunks=live.chunks.slice();const blob=new Blob(chunks,{type:rec.mimeType||live.mime});live.chunks=[];
-   if(blob.size<800){liveSet('idle','Ses duyulmadı','Mikrofon yeterli ses kaydetmedi. Tekrar deneyebilirsin.');liveCapture();return;}
+   const chunks=live.chunks.slice(),blob=new Blob(chunks,{type:rec.mimeType||live.mime});live.chunks=[];
+   if(blob.size<800){liveSet('ready','Ses kaydı çok kısa','Tekrar mikrofona dokunup konuş.');return;}
    liveHandleAudio(blob);
   };
-  rec.start();liveSet('listening','Dinliyorum… Konuşabilirsin');
+  rec.start();liveSet('listening','Kayıt yapılıyor · Seni dinliyorum');
   const arr=live.analyser?new Uint8Array(live.analyser.fftSize):null;
   live.pulse=setInterval(()=>{
    if(!live.active||live.phase!=='listening')return;
-   const now=performance.now();let rms=0;
-   if(live.analyser&&arr){live.analyser.getByteTimeDomainData(arr);let ss=0;for(let n=0;n<arr.length;n++){const x=(arr[n]-128)/128;ss+=x*x;}rms=Math.sqrt(ss/arr.length);}
-   // Amplitude-based voice activity detection is only an approximation.
-   if(rms>.020){if(!live.firstLoud)live.firstLoud=now;if(now-live.firstLoud>230){live.heardSpeech=true;live.lastLoud=now;}}
-   else if(rms>.012&&live.heardSpeech)live.lastLoud=now;
-   if(live.heardSpeech&&now-live.lastLoud>1250){liveFinishSentence();return;}
-   if(now-live.recordStart>17000){liveFinishSentence();return;}
-   if(!live.heardSpeech&&now-live.recordStart>15000){live.recordStart=now;live.firstLoud=0;liveCleanupRecorder(true);if(live.active)liveCapture();}
-  },130);
- }catch(e){liveSet('idle','Dinleme başlatılamadı',liveMicError(e));liveEnd(true)}
+   if(live.analyser&&arr){live.analyser.getByteTimeDomainData(arr);let ss=0;for(const v of arr){let x=(v-128)/128;ss+=x*x;}live.meter=Math.min(1,Math.sqrt(ss/arr.length)*7);}
+   const meter=document.getElementById('live-volume');if(meter?.style)meter.style.width=Math.round(live.meter*100)+'%';
+   const label=document.getElementById('live-elapsed');if(label)label.textContent=Math.round((performance.now()-live.recordStart)/1000)+' sn / 30 sn';
+   if(performance.now()-live.recordStart>=30000)liveFinishSentence();
+  },180);
+ }catch(e){liveSet('ready','Dinleme başlatılamadı',liveMicError(e));}
 }
-function liveFinishSentence(){if(!live.active||live.phase!=='listening'||!live.rec)return;const recorder=live.rec;liveSet('thinking','Sesin çözümleniyor…');if(live.pulse){clearInterval(live.pulse);live.pulse=null;}if(recorder.state==='recording')recorder.stop();}
+function liveFinishSentence(){if(!live.active||live.phase!=='listening'||!live.rec)return;const recorder=live.rec;liveSet('thinking','Ses kaydı bitiriliyor…');if(live.pulse){clearInterval(live.pulse);live.pulse=null;}if(recorder.state==='recording')recorder.stop();}
 async function liveWorker(body,timeoutMs=45000){
  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeoutMs);
  try{const r=await fetch(state.settings.worker,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+state.settings.token},body:JSON.stringify(body),signal:controller.signal});const data=await r.json().catch(()=>({}));if(!r.ok)throw Error(data.error||('HTTP '+r.status));return data;}finally{clearTimeout(timer)}
@@ -113,11 +111,11 @@ async function liveHandleAudio(blob){
  const seq=live.seq;live.busy=true;liveSet('thinking','Sesi yazıya çeviriyorum…');
  try{
   if(blob.size>1400000)throw Error('Ses kaydı çok büyük. Daha kısa konuş.');
-  const data=await liveWorker({action:'transcribe',audio:await liveAsBase64(blob),mime:blob.type||live.mime,language:'auto'},45000);
+  const data=await liveWorker({action:'transcribe',audio:await liveAsBase64(blob),mime:blob.type||live.mime,language:'en'},45000);
   if(!live.active||live.seq!==seq)return;
   const text=String(data.text||'').trim();if(!text)throw Error('Konuşma algılanamadı.');
-  live.busy=false;await liveTalkToAI(text,'mic');
- }catch(e){if(live.seq!==seq)return;live.busy=false;live.error=String(e.message||e).slice(0,180);liveSet('idle','Ses algılanamadı',live.error);if(live.active)liveCapture();}
+  live.recognized=text;live.failedAudio=null;live.busy=false;liveUpdate();await liveTalkToAI(text,'mic');
+ }catch(e){if(live.seq!==seq)return;live.busy=false;live.error=String(e.message||e).slice(0,180);live.failedAudio=blob;liveSet('ready','Ses işlenemedi · Tekrar dene',live.error);}
 }
 function liveLog(role,content){if(!Array.isArray(state.voiceHistory))state.voiceHistory=[];state.voiceHistory.push({role,content:String(content).slice(0,1200),at:Date.now()});state.voiceHistory=state.voiceHistory.slice(-60);activity();}
 async function liveTalkToAI(message,source='typed'){
@@ -130,12 +128,12 @@ async function liveTalkToAI(message,source='typed'){
  live.busy=true;
  state.pendingVoiceTurn={content:value,source:source==='mic'?'mic':'typed',at:pending?.at||Date.now()};save();
  live.error='';liveSet('thinking','AI cümleni değerlendiriyor…');const seq=live.seq;
- const lesson=currentLesson();
+ const lesson=flowActiveLesson()||currentLesson();
  try{
   const payload={action:'analyze_speech_turn',utterance:value,source:state.pendingVoiceTurn.source,
    lesson:{id:lesson.id,level:lesson.level,title:lesson.title,rule:lesson.rule},
    history:liveConversation().slice(-8).map(m=>({role:m.role,content:m.content})),
-   focus:speakingSummary().patterns.slice(0,3).map(p=>p.focus)};
+   focus:speakingSummary().patterns.slice(0,3).map(p=>p.focus),practiceLessonId:flowActiveLesson()?.id||null};
   const res=await liveWorker(payload,60000);
   if(live.seq!==seq)return false;
   const a=speakingValidate(res);
@@ -143,7 +141,7 @@ async function liveTalkToAI(message,source='typed'){
   liveLog('user',value);const history=liveConversation();history[history.length-1].assessment={status:a.status,corrected:a.corrected,focus:a.focus};
   liveLog('assistant',a.reply);live.lastAnswer=a.reply;live.lastAssessment=a;
   speakingCommit(value,a,source);state.pendingVoiceTurn=null;save();
-  live.busy=false;liveUpdate();liveSpeak(a.reply,()=>{if(live.active)liveCapture()});return true;
+  live.busy=false;liveUpdate();liveSpeak(a.reply,()=>{if(live.active)liveSet('ready','Öğretmen yanıtladı · Konuşmaya devam et');if(page==='speaking'&&speakMode==='live'&&state.lastCompletedLessonId&&!state.lessonConversation)renderLiveVoice()});return true;
  }catch(e){
   if(live.seq!==seq)return false;
   live.busy=false;const reason='AI değerlendirmesi tamamlanamadı: '+String(e.message||e).slice(0,170);
@@ -166,8 +164,8 @@ async function liveRequestHelp(message){
   const answer=String(res.reply||'').trim().slice(0,1200);if(!answer)throw Error('AI yanıtı boş.');
   // Help commands are NOT student English utterances; never grade them.
   liveLog('assistant',answer);live.lastAnswer=answer;live.busy=false;
-  liveSpeak(answer,()=>{if(live.active)liveCapture()});
- }catch(e){if(live.seq!==seq)return;live.busy=false;liveSet('idle','Açıklama alınamadı',String(e.message||e).slice(0,160));if(live.active)liveCapture();}
+  liveSpeak(answer,()=>{if(live.active)liveSet('ready','Hazır · Yeni kayıt için mikrofona dokun')});
+ }catch(e){if(live.seq!==seq)return;live.busy=false;liveSet('idle','Açıklama alınamadı',String(e.message||e).slice(0,160));if(live.active)liveSet('ready','Hazır · Yeni kayıt için mikrofona dokun');}
 }
 function liveDetermineLang(segment){return /[çğıöşüÇĞİÖŞÜ]|\b(merhaba|açıkla|çünkü|olduğu|şimdi|önce|sonra|doğru|yanlış|demek|türkçe|cümle|anlamı|öğren|kelime|çok|bunu|böyle|şöyle|edilir|kullanılır)\b/i.test(segment)?'tr':'en';}
 function liveSpeechChunks(text){const raw=String(text).replace(/\*\*/g,'').replace(/[#*_`]/g,'').replace(/\[[^\]]+\]\([^)]*\)/g,'').replace(/\s+/g,' ').trim();const sentences=raw.match(/[^.!?\n]+[.!?]?/g)||[raw];let chunks=[];for(let p of sentences){p=p.trim();if(!p)continue;while(p.length>170){let at=p.lastIndexOf(' ',170);if(at<40)at=170;chunks.push(p.slice(0,at));p=p.slice(at).trim();}if(p)chunks.push(p);}return chunks.slice(0,16);}
@@ -199,7 +197,7 @@ async function liveRetry(){
 function liveDiscard(){
  if(live.busy)return;
  state.pendingVoiceTurn=null;save();live.error='';liveSet('idle','Cümle gönderimi iptal edildi');
- if(live.active)liveCapture();
+ if(live.active)liveSet('ready','Hazır · Yeni kayıt için mikrofona dokun');
 }
 async function livePracticeFocus(){
  const focus=live.lastAssessment?.focus||speakingSummary().patterns[0]?.focus||currentLesson().title;
@@ -207,9 +205,11 @@ async function livePracticeFocus(){
 }
 function liveAbortCapture(){if(live.pulse){clearInterval(live.pulse);live.pulse=null;}if(live.rec&&live.rec.state==='recording'){live.silentStop=true;try{live.rec.stop()}catch(e){}}live.rec=null;}
 async function liveSendTyped(){let field=document.getElementById('live-input');let s=field?.value.trim();if(!s)return;if(!liveReady()){liveSet('idle','AI bağlantısı eksik','Cloudflare Worker ayarlarını kontrol et.');return;}if(live.busy)return;liveAbortCapture();const ok=await liveTalkToAI(s,'typed');if(ok)field.value='';}
-function liveRepeat(){if(!live.lastAnswer){toast('Henüz tekrar edilecek cevap yok.');return;}liveAbortCapture();liveSpeak(live.lastAnswer,()=>{if(live.active)liveCapture()});}
+function liveRepeat(){if(!live.lastAnswer){toast('Henüz tekrar edilecek cevap yok.');return;}liveAbortCapture();liveSpeak(live.lastAnswer,()=>{if(live.active)liveSet('ready','Hazır · Yeniden konuşabilirsin')});}
 function liveSetSlow(){live.slow=!live.slow;if(page==='speaking'&&speakMode==='live')renderLiveVoice();toast(live.slow?'Öğretmen daha yavaş konuşacak.':'Normal okuma hızı.');}
 function liveSaveToMemo(){if(!live.lastAnswer)return;const text=live.lastAnswer.slice(0,220);const result=memoAdd(text,'','Canlı AI görüşmesi');toast(result.error||'Cümle ezber defterine eklendi.');}
 function liveReset(){if(live.active){toast('Önce canlı görüşmeyi bitir.');return;}if(state.pendingVoiceTurn?.content){toast('Önce gönderilemeyen cümleyi yeniden dene veya vazgeç.');return;}if(!confirm('Yalnızca canlı görüşme geçmişi temizlensin mi? Dersler ve ezberler korunur.'))return;state.voiceHistory=[];state.pendingVoiceTurn=null;live.lastAnswer='';live.lastAssessment=null;save();renderLiveVoice();}
 window.addEventListener('pagehide',()=>{if(live.active)liveEnd(true)});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&live.active)liveEnd(true)});
+
+async function liveRetryAudio(){if(!live.failedAudio||live.busy)return;const blob=live.failedAudio;await liveHandleAudio(blob);}

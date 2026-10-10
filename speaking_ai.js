@@ -16,7 +16,7 @@ function speakingValidate(response){
  const take=(v,max)=>typeof v==='string'?v.trim().slice(0,max):'';
  const reply=take(r.reply,500),feedbackTr=take(r.feedbackTr,450),corrected=take(r.corrected,240),focus=take(r.focus,90),nextQuestion=take(r.nextQuestion,210);
  if(!reply||!feedbackTr||!nextQuestion||!focus||(r.status==='needs_practice'&&!corrected))throw Error('AI konuşma geri bildirimi eksik.');
- return {status:r.status,reply,feedbackTr,corrected,focus,nextQuestion};
+ return {status:r.status,reply,feedbackTr,corrected,focus,nextQuestion,onTopic:r.onTopic===true};
 }
 function speakingCommit(message,assessment,source='typed'){
  const s=speakingStore(),at=Date.now(),focus=String(assessment.focus||'Genel konuşma').slice(0,90);
@@ -31,6 +31,7 @@ function speakingCommit(message,assessment,source='typed'){
  }
  s.recent.push({at,lessonId:currentLesson().id,status:assessment.status,source:source==='mic'?'mic':'typed',focus,original:String(message).slice(0,180),corrected:assessment.corrected.slice(0,180)});
  s.recent=s.recent.slice(-40);
+ if(typeof flowOnSpeech==='function'){const lessonId=state.lessonConversation?.lessonId; if(lessonId)flowOnSpeech(lessonId,message,assessment,source);}
  if(assessment.status!=='uncertain')dailyPlan().steps.speaking=true;
  if(assessment.status==='needs_practice'&&typeof directorInvalidate==='function')directorInvalidate();
  else save();
