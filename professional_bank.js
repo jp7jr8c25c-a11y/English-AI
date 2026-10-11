@@ -8,14 +8,24 @@ const PRO_BANK_CACHE={};
 function proEnabled(l){return !!l&&PRO_LEVELS.has(l.level)&&!!PROFESSIONAL_NOTES[l.id]}
 function proHash(s){let h=2166136261;for(const c of String(s)){h=Math.imul(h^c.charCodeAt(0),16777619)}return h>>>0}
 function proMix(a,seed){let x=seed>>>0;const v=a.slice();for(let i=v.length-1;i>0;i--){x=(Math.imul(x,1664525)+1013904223)>>>0;const j=x%(i+1);[v[i],v[j]]=[v[j],v[i]]}return v}
-function proPickWrong(values,correct,seed){const normalized=String(correct).toLowerCase().trim();let options=values.filter(v=>v&&String(v).toLowerCase().trim()!==normalized&&String(v).length<130);
- options=[...new Set(options)];return proMix(options,seed).slice(0,3);
+function proPickWrong(values,correct,seed){
+ const normalized=answerKey(correct),seen=new Set([normalized]);
+ const options=[];
+ for(const v of values){const k=answerKey(v);if(!k||seen.has(k)||String(v).length>=130)continue;seen.add(k);options.push(v);}
+ return proMix(options,seed).slice(0,3);
 }
+function proValidQuestion(q){
+ if(!q||!Array.isArray(q.answers)||!q.answers.length)return false;
+ if(!Array.isArray(q.options)||!q.options.length)return true;
+ const keys=q.options.map(x=>answerKey(x)),answers=new Set(q.answers.map(x=>answerKey(x)));
+ return q.options.length>=3&&keys.every(Boolean)&&new Set(keys).size===keys.length&&keys.filter(k=>answers.has(k)).length===1;
+}
+
 function proQ(l,part,index,q,source){return {...q,key:`pro:${l.id}:${part}:${index}`,origin:part,focus:l.title,source:source||'Yapılandırılmış içerik'};}
 function proBank(l){if(!proEnabled(l))return null;if(PRO_BANK_CACHE[l.id])return PRO_BANK_CACHE[l.id];
  const index=LESSONS.indexOf(l),neighbors=LESSONS.filter(x=>x.level===l.level&&x.id!==l.id&&Array.isArray(x.examples));
  const guide=LESSON_GUIDES[l.id]||{},unit=MASTER_LESSON_UNITS.find(x=>x.id===l.id);
- const samples=l.examples.map((en,i)=>({en, tr: unit?(i===0?unit.at:unit.bt):String((guide.meanings?.length?guide.meanings:(PRO_LEGACY_MEANINGS[l.id]||[]))[i]||'').trim()})).filter(x=>x.en&&x.tr&&x.en!==x.tr);
+ const samples=l.examples.map((en,i)=>({en, tr: unit?(i===0?unit.at:i===1?unit.bt:''):String((guide.meanings?.length?guide.meanings:(PRO_LEGACY_MEANINGS[l.id]||[]))[i]||'').trim()})).filter(x=>x.en&&x.tr&&x.en!==x.tr);
  const otherTranslations=neighbors.flatMap(x=>{const r=MASTER_LESSON_UNITS.find(y=>y.id===x.id);const g=LESSON_GUIDES[x.id]||{};return r?[r.at,r.bt]:g.meanings?.length?g.meanings:(PRO_LEGACY_MEANINGS[x.id]||[])}).filter(Boolean);
  const otherEnglish=neighbors.flatMap(x=>x.examples||[]).filter(Boolean);
  const exam=[],practice=[],homework=[];
@@ -40,14 +50,14 @@ function proBank(l){if(!proEnabled(l))return null;if(PRO_BANK_CACHE[l.id])return
    const s=samples[i%samples.length];if(!s)break;
    const useEnglish=i===0;const answer=useEnglish?s.en:s.tr;
    const opts=useEnglish?[answer,...proPickWrong(otherEnglish,answer,proHash(l.id+'hw'+i))]:[answer,...proPickWrong(otherTranslations,answer,proHash(l.id+'hw'+i))];
-   if(opts.length>=3)homework.push(proQ(l,'homework',i,{type:'choice',listenText:i===2?s.en:null,q:i===2?'▶ Öğretmeni dinleyip doğru Türkçe anlamı seç.':useEnglish?`Duruma uygun İngilizce ifadeyi seç: ${s.tr}`:`“${s.en}” cümlesini kendi sözlerinle anlamlandırmadan önce doğru Türkçe karşılığı seç.`,options:opts,answers:[answer],why:`Örnek: ${s.en} — ${s.tr}`},'Ev ödevi — uygulama'));
+   if(opts.length>=3&&new Set(opts.map(answerKey)).size===opts.length)homework.push(proQ(l,'homework',i,{type:'choice',listenText:i===2?s.en:null,q:i===2?'▶ Öğretmeni dinleyip doğru Türkçe anlamı seç.':useEnglish?`Duruma uygun İngilizce ifadeyi seç: ${s.tr}`:`“${s.en}” cümlesini kendi sözlerinle anlamlandırmadan önce doğru Türkçe karşılığı seç.`,options:opts,answers:[answer],why:`Örnek: ${s.en} — ${s.tr}`},'Ev ödevi — uygulama'));
  }
  // Extra practice is ungraded, but records mistakes and feeds the learning profile.
  const pbase=(l.questions||[]).filter(q=>Array.isArray(q.answers)&&q.answers.length&&Array.isArray(q.options));
  pbase.forEach((q,i)=>practice.push(proQ(l,'practice',practice.length,{type:q.type,q:`Kendini kontrol et: ${q.q}`,options:(q.options||[]).slice(),answers:q.answers.slice(),why:q.why||l.rule},'Konu pekiştirme')));
  // At least 10 exam items; each attempt selects a subset, and every question's choices are shuffled at attempt creation.
  // Same learning expressions may appear in different modalities; this is NOT a bank of 100% unique linguistic concepts.
- const unique=arr=>{const seen=new Set();return arr.filter(q=>{const id=String(q.q).toLowerCase();if(seen.has(id))return false;seen.add(id);return true})};
+ const unique=arr=>{const seen=new Set();return arr.filter(q=>{const id=answerKey(q.q);if(!proValidQuestion(q)||seen.has(id))return false;seen.add(id);return true})};
  const result={exam:unique(exam),practice:unique(practice),homework:unique(homework),samples,focus:PROFESSIONAL_NOTES[l.id].focus,task:PROFESSIONAL_NOTES[l.id].task};
  PRO_BANK_CACHE[l.id]=result;return result;
 }

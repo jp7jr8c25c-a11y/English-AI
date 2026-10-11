@@ -73,7 +73,10 @@ function memoProReviewPrompt(card,session){const dir=memoProSettings().direction
  const target=trEn?card.front:card.back;const prompt=trEn?card.back:card.front;
  return {prompt,target,label:trEn?'Türkçe → İngilizce':'İngilizce → Türkçe',trEn};
 }
-function memoProCheck(value,target){let ans=clean(String(value||'').replace(/[’‘]/g,"'"));let variants=String(target||'').split(/\s*(?:;|\/)\s*/).map(clean).filter(Boolean);return ans.length>0&&variants.includes(ans);}
+function memoProCheck(value,target){
+ const alternatives=String(target||'').split(/\s*(?:;|\/)\s*/).filter(Boolean);
+ return alternatives.some(expected=>answerMatches(value,expected));
+}
 function memoProReviewForm(card,session){const p=memoProReviewPrompt(card,session);
  const entered=session.answer||'';const checked=session.revealed?memoProCheck(entered,p.target):null;
  return `<div class="card memocard center memo-pro-review"><p class="eyebrow">${h(p.label)}</p><h2>${h(p.prompt)}</h2>${!p.trEn?`<button class="btn secondary" data-action="speak" data-text="${h(card.front)}">▶ İngilizceyi dinle</button>`:''}

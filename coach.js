@@ -22,7 +22,8 @@ function coachMake(l){
  return {lessonId:l.id,started:Date.now(),updated:Date.now(),question:'',focus:'',feedback:'',correction:'',correct:null,streak:0,attempts:0,correctTotal:0,readyForQuiz:false,needsRestart:false,examPassed:false,history:[],draft:''};
 }
 function coachRender(l){
- const s=coachSession(l),connected=coachCanUse();
+ const s=coachSession(l),connected=coachCanUse()||(starterAvailable(l)&&l.id==='L01');
+ if(starterAvailable(l)&&!starterDone(l))return '<section class="premium-panel coach-panel"><h2>AI alıştırmaları</h2><p>Önce yukarıdaki dört temel ifadeyi Türkçe anlamlarıyla öğren. Daha önce görmediğin kelimelerle soru sormayacağız.</p></section>';
  return `<section class="premium-panel coach-panel" aria-label="AI öğretmenli ders çalışması">
  <div class="coach-heading"><span class="coach-avatar"><img src="teacher-avatar.webp" alt="AI öğretmen" width="52" height="52"></span><span><small class="panel-eyebrow">✦ KİŞİSEL ÖĞRETMEN</small><h2>AI ile adım adım öğren</h2></span></div>
  <p class="muted">Öğretmenin cevabına göre konuyu yeniden anlatır, sana özel yeni sorular sorar ve hazır olduğunda mini sınava yönlendirir.</p>
@@ -39,9 +40,11 @@ function coachRender(l){
  </section>`;
 }
 async function coachRequest(l,phase,answer='',previous=null){
- if(!coachCanUse())throw Error('Cloudflare gerçek AI bağlantısı etkin değil.');
+ if(!coachCanUse()&&l.id!=='L01')throw Error('Cloudflare gerçek AI bağlantısı etkin değil.');
  if(!coachValidLesson(l))throw Error('Bu ders henüz açılmadı.');
  const session=previous||coachSession(l)||coachMake(l);
+ const starter=starterCoachTurn(l,phase,answer,session);
+ if(starter)return coachCleanReply(starter,phase);
  const history=(session.history||[]).slice(-6).map(x=>({question:String(x.question||'').slice(0,360),answer:String(x.answer||'').slice(0,550),correct:!!x.correct}));
  const body={action:'coach_turn',phase,lesson:{id:l.id,level:l.level,title:l.title,rule:l.rule,examples:l.examples.slice(0,4)},answer:String(answer||'').slice(0,550),question:phase==='answer'?String(session.question||'').slice(0,360):'',learningProfile:proEnabled(l)?{goal:String(l.tr).slice(0,200),focus:PROFESSIONAL_NOTES[l.id].focus.slice(0,350),task:PROFESSIONAL_NOTES[l.id].task.slice(0,250),prePractice:Number(proState()[l.id]?.score??-1)}:null,history,mistakes:[...Object.values(state.misses).slice(-4).map(x=>String(x?.title||'').slice(0,120)),...speakingSummary().patterns.slice(0,3).map(x=>'Konuşma hatası: '+x.focus)].slice(0,7)};
  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),50000);
@@ -54,6 +57,7 @@ async function coachRequest(l,phase,answer='',previous=null){
 }
 async function coachStart(l,reset=false){
  if(coachBusy||!coachValidLesson(l))return;
+ if(starterAvailable(l)&&!starterDone(l)){coachError='Önce dört temel ifadeyi öğren.';if(page==='lesson')renderLesson();return;}
  coachBusy=true;coachError='';coachPending={phase:'start',lessonId:l.id};if(page==='lesson')renderLesson();
  try{
   const base=reset?coachMake(l):coachSession(l)||coachMake(l);

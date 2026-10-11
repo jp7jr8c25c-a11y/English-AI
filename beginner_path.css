@@ -1,0 +1,18 @@
+.beginner-path{margin:15px 0 23px;padding:19px;line-height:1.55;overflow-wrap:anywhere}
+.beginner-path h2{margin:11px 0;font-size:24px}
+.beginner-path h3{font-size:19px;line-height:1.45}
+.beginner-count{color:#a6eaff;font-weight:700;margin:15px 0 5px}
+.beginner-phrase{display:flex;flex-direction:column;gap:9px;padding:19px;border:1px solid #557ed2;background:#0b204b;border-radius:18px;margin:15px 0}
+.beginner-phrase strong{font-size:27px;color:#fff;line-height:1.35}
+.beginner-phrase span{color:#b6d5ff;font-size:18px}
+.beginner-phrase button{align-self:flex-start;max-width:100%}
+.beginner-task{color:#cbdcff}
+.beginner-ready{padding:14px;border-radius:14px;border:1px solid #2faeaa;background:#073d465c;margin:15px 0}
+.beginner-ready p{margin:8px 0 0}
+.beginner-learned{display:grid;grid-template-columns:1fr;gap:9px;margin:12px 0 17px}
+.beginner-learned>div{display:flex;align-items:center;gap:10px;border:1px solid #3e568e;border-radius:12px;padding:9px;flex-wrap:wrap}
+.beginner-learned strong{min-width:38%;font-size:14px}
+.beginner-learned span{font-size:13px;color:#bbd4fc}
+.beginner-path .btn.full{min-height:54px}
+
+.beginner-words{border:1px solid #304976;border-radius:12px;padding:12px;margin:12px 0;background:#0e1b3b}.beginner-words>strong{display:block;font-size:14px;color:#9ee1ff;margin:0 0 8px}.beginner-words>div{display:flex;gap:8px;align-items:flex-start;justify-content:space-between;padding:7px 0;border-top:1px solid #344566;flex-wrap:wrap}.beginner-words b{color:#fff}.beginner-words span{color:#c8daff;font-size:14px;max-width:72%}
